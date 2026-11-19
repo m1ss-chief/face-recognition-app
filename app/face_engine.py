@@ -209,6 +209,29 @@ class ArcFace:
         return emb / np.linalg.norm(emb, axis=1, keepdims=True)
 
 
+def reading_order(faces: list[Face]) -> list[Face]:
+    """Sort faces row by row (top to bottom), each row left to right.
+
+    Faces whose vertical centres are within ~half a face height of the row's
+    first face belong to the same row, so people in a standing back row and a
+    seated front row get numbered the way a person would read the photo.
+    """
+    if not faces:
+        return faces
+    by_y = sorted(faces, key=lambda f: (f.box[1] + f.box[3]) / 2)
+    rows: list[list[Face]] = []
+    for f in by_y:
+        cy = (f.box[1] + f.box[3]) / 2
+        if rows:
+            anchor = rows[-1][0]
+            acy = (anchor.box[1] + anchor.box[3]) / 2
+            if abs(cy - acy) < 0.6 * max(anchor.height, f.height):
+                rows[-1].append(f)
+                continue
+        rows.append([f])
+    return [f for row in rows for f in sorted(row, key=lambda f: f.box[0])]
+
+
 # --------------------------------------------------------------------------- #
 # Public engine
 # --------------------------------------------------------------------------- #
@@ -233,8 +256,7 @@ class FaceEngine:
         size = 640 if long_side <= 800 else 1280 if long_side >= 1600 else 960
         faces = self.detector.detect(img, input_size=size)
         faces = [f for f in faces if min(f.width, f.height) >= min_face]
-        faces.sort(key=lambda f: (f.box[0] + f.box[2]) / 2)  # left-to-right
-        return self._embed_faces(img, faces)
+        return self._embed_faces(img, reading_order(faces))
 
     def detect_reference(self, img: np.ndarray) -> tuple[Face | None, int]:
         """Find the single subject of a reference/ID photo.
