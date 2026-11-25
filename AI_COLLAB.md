@@ -1,6 +1,6 @@
 # AI Collaboration
 
-I used **Claude Code** in VS Code as a coding assistant on this project. I set the direction, made the product and technical decisions, and checked every result myself. The assistant mostly helped with research, writing code faster and testing.
+I used **Claude Code** in VS Code as a coding assistant on this project. I set the direction, made the product and technical decisions, and checked every result myself. The assistant mostly helped with research, writing code faster and testing. The full chat history is in [`chat-history/claude-code-session.md`](chat-history/claude-code-session.md).
 
 **How I worked:**
 - I agreed the plan before any code was written.
@@ -48,3 +48,9 @@ The single-page version still looked generic, so I wrote a full design spec: a s
 - I kept plain HTML/CSS/JS instead of React + Vite + Tailwind, because Node.js isn't on the demo laptop. Fonts and Lucide icons are bundled locally so the app stays offline.
 - Nothing is faked: processing shows only real stages, "confidence" is the real similarity score, and since the browser hides a folder's full path, the app says so instead of inventing one.
 - Testing at desktop, tablet and phone widths caught a misleading "closest match" on a face with 0.08 similarity, a collapsed results panel and sideways scrolling on phones.
+
+---
+
+## Full chat history
+
+The complete conversation, from my first prompt (the brief PDF and the repo link) to the end, is in [`chat-history/claude-code-session.md`](chat-history/claude-code-session.md). My messages and the assistant's replies are word for word; each tool the assistant ran is shown as a one-line summary, and raw tool output and personal details are left out. [`chat-history/README.md`](chat-history/README.md) explains how it was exported.
