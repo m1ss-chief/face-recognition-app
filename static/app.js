@@ -42,6 +42,10 @@
     sessions: null,
     libView: "grid",
     libQuery: "",
+    libEdit: null,          // { mode: "rename" | "remove", name }
+    libConfirmClear: false,
+    libBusy: false,
+    libFresh: null,
   };
 
   // ================================================================== server
@@ -413,6 +417,8 @@
       });
       state.gallery = data;
       state.folderFiles = images;
+      state.libEdit = null;
+      state.libConfirmClear = false;
       if (state.result) state.result.stale = true;
       const skipped = data.issues.filter((i) => !i.warning).length;
       toast(`${plural(data.count, "person", "people")} ready${skipped ? ` · ${skipped} photo${skipped > 1 ? "s" : ""} skipped` : ""}`);
@@ -881,9 +887,12 @@
   // ================================================================== library
   render.library = () => {
     const g = state.gallery, root = $("#libraryRoot");
-    $("#libraryActions").innerHTML = g && !state.loadingGallery ? `
-      ${state.folderFiles ? `<button class="btn" type="button" data-act="lib-refresh" title="Read the same photos again, e.g. after editing them. To add new people, choose the folder again.">${ic("refresh-cw")}Refresh library</button>` : ""}
-      <button class="btn btn-primary" type="button" data-act="open-folder">${ic("folder-open")}Choose folder</button>` : "";
+    const busy = state.loadingGallery || state.libBusy;
+    $("#libraryActions").innerHTML = state.loadingGallery ? "" : `
+      ${g ? `<button class="btn btn-quiet" type="button" data-act="lib-clear" ${busy ? "disabled" : ""}>${ic("trash-2")}Clear library</button>` : ""}
+      ${g && state.folderFiles ? `<button class="btn" type="button" data-act="lib-refresh" ${busy ? "disabled" : ""} title="Read the folder's photos again. This replaces any changes made here.">${ic("refresh-cw")}Reload folder</button>` : ""}
+      <button class="btn" type="button" data-act="open-folder" ${busy ? "disabled" : ""}>${ic("folder-open")}${g ? "Choose folder" : "Choose reference folder"}</button>
+      <button class="btn btn-primary" type="button" data-act="lib-add" ${busy ? "disabled" : ""}>${ic("user-plus")}Add people</button>`;
 
     if (state.loadingGallery) {
       root.innerHTML = galleryProgressHtml() + `<div class="people-grid" style="margin-top:20px">${'<div class="skel-card"><div class="skel a"></div><div class="skel b"></div><div class="skel c"></div></div>'.repeat(10)}</div>`;
@@ -893,22 +902,32 @@
     if (!g) {
       root.innerHTML = `
         <div class="empty boxed">
-          <div class="empty-art">${ic("folder-open")}</div>
-          <h3>No folder selected yet</h3>
-          <p>Choose the folder that holds one photograph per person. Each file name becomes that person's name, and the folder stays the source of truth.</p>
-          <button class="btn btn-primary btn-lg" type="button" data-act="open-folder">${ic("folder-open")}Choose reference folder</button>
+          <div class="empty-art">${ic("users")}</div>
+          <h3>Your library is empty</h3>
+          <p>Choose a folder with one photograph per person (each file name becomes that person's name), or add people one at a time.</p>
+          <div class="empty-actions">
+            <button class="btn btn-primary btn-lg" type="button" data-act="open-folder">${ic("folder-open")}Choose reference folder</button>
+            <button class="btn btn-lg" type="button" data-act="lib-add">${ic("user-plus")}Add people</button>
+          </div>
         </div>
         ${state.galleryError ? `<div class="notice err" style="margin-top:16px">${ic("triangle-alert")}<span>${esc(state.galleryError)}</span></div>` : ""}`;
       return;
     }
     const errs = g.issues.filter((i) => !i.warning).length;
     root.innerHTML = `
+      ${state.libConfirmClear ? `
+        <div class="confirm-bar" role="alertdialog" aria-label="Clear library">
+          ${ic("triangle-alert")}
+          <span><b>Remove all ${plural(g.count, "person", "people")} from the library?</b> Your photo files are not deleted.</span>
+          <button class="btn btn-sm" type="button" data-act="lib-clear-cancel">Cancel</button>
+          <button class="btn btn-sm btn-danger" type="button" data-act="lib-clear-yes">Clear library</button>
+        </div>` : ""}
       <div class="lib-info">
-        <span class="folder">${ic("folder")}${esc(g.folder || "Selected folder")}</span>
+        <span class="folder">${ic("folder")}${esc(g.folder || "Your library")}</span>
         <span><b>${g.count}</b> people</span>
         <span><b>${g.files_received}</b> images read</span>
         ${errs ? `<span><b style="color:var(--error)">${errs}</b> skipped</span>` : ""}
-        <span class="tiny" style="margin-left:auto">Names come from file names. Rename a file and refresh to change a name.</span>
+        <span class="tiny" style="margin-left:auto">Edits here change the app's library only. Files in your folder are never modified.</span>
       </div>
       ${issuesHtml(g.issues)}
       <div class="lib-bar" style="margin-top:18px">
@@ -926,30 +945,117 @@
 
   function paintLibList() {
     const g = state.gallery;
+    if (!g || !$("#libList")) return;
     const q = state.libQuery.trim().toLowerCase();
     const warnByFile = new Map(g.issues.filter((i) => i.warning).map((i) => [baseName(i.file), i.problem]));
     const people = g.people.filter((p) => p.name.toLowerCase().includes(q));
     const invalid = g.issues.filter((i) => !i.warning && (String(i.name).toLowerCase().includes(q) || baseName(i.file).toLowerCase().includes(q)));
     $("#libCount").textContent = q ? `${people.length} of ${g.count} people` : `${plural(g.count, "person", "people")}`;
     if (!people.length && !invalid.length) {
-      $("#libList").innerHTML = `<div class="empty"><div class="empty-art">${ic("search")}</div><h3>No one called “${esc(state.libQuery)}”</h3><p>Check the spelling, or add a photo named after them to the folder.</p></div>`;
+      $("#libList").innerHTML = `<div class="empty"><div class="empty-art">${ic("search")}</div><h3>No one called “${esc(state.libQuery)}”</h3><p>Check the spelling, or add them with <b>Add people</b>.</p></div>`;
       return;
     }
     const status = (p) => {
       const w = p.files.map((f) => warnByFile.get(f)).find(Boolean);
       return w ? ["warn", w] : p.files.length > 1 ? ["", `${p.files.length} photos combined`] : ["", ""];
     };
+    const ed = state.libEdit;
+    const isEd = (p, mode) => ed && ed.name === p.name && ed.mode === mode;
+    const tools = (p) => `
+      <div class="person-tools">
+        <button class="tool" type="button" data-act="lib-rename" data-name="${esc(p.name)}" title="Rename" aria-label="Rename ${esc(p.name)}">${ic("pencil", "ico-sm")}</button>
+        <button class="tool danger" type="button" data-act="lib-remove" data-name="${esc(p.name)}" title="Remove from library" aria-label="Remove ${esc(p.name)}">${ic("trash-2", "ico-sm")}</button>
+      </div>`;
+    const nameField = (p) => `
+      <form class="rename" data-name="${esc(p.name)}">
+        <input name="n" value="${esc(p.name)}" maxlength="80" aria-label="New name for ${esc(p.name)}" autocomplete="off">
+        <button class="tool ok" type="submit" title="Save" aria-label="Save name">${ic("check", "ico-sm")}</button>
+        <button class="tool" type="button" data-act="lib-edit-cancel" title="Cancel" aria-label="Cancel">${ic("x", "ico-sm")}</button>
+      </form>`;
+    const confirmRemove = (p) => `
+      <div class="remove-confirm" role="alertdialog" aria-label="Remove ${esc(p.name)}">
+        <p>Remove <b>${esc(p.name)}</b> from the library?</p>
+        <div><button class="btn btn-sm" type="button" data-act="lib-edit-cancel">Cancel</button><button class="btn btn-sm btn-danger" type="button" data-act="lib-remove-yes" data-name="${esc(p.name)}">Remove</button></div>
+      </div>`;
+    const fresh = (p) => (state.libFresh?.includes(p.name) ? " fresh" : "");
+
     if (state.libView === "list") {
       $("#libList").innerHTML = `<div class="people-list">${people.map((p) => {
         const [cls, text] = status(p);
-        return `<div class="row"><img src="${esc(p.thumb)}" alt=""><b>${esc(p.name)}</b><span class="file">${esc(p.files.join(", "))}</span>${text ? `<span class="person-status ${cls}" style="margin:0">${esc(text)}</span>` : "<span></span>"}</div>`;
+        if (isEd(p, "remove")) return `<div class="row removing"><img src="${esc(p.thumb)}" alt="">${confirmRemove(p)}</div>`;
+        return `<div class="row${fresh(p)}"><img src="${esc(p.thumb)}" alt="">${isEd(p, "rename") ? nameField(p) : `<b>${esc(p.name)}</b>`}<span class="file">${esc(p.files.join(", "))}</span><span class="row-end">${text ? `<span class="person-status ${cls}" style="margin:0">${esc(text)}</span>` : ""}${isEd(p, "rename") ? "" : tools(p)}</span></div>`;
       }).join("")}${invalid.map((i) => `<div class="row"><span class="ph">${ic("triangle-alert", "ico-sm")}</span><b>${esc(i.name)}</b><span class="file">${esc(baseName(i.file))}</span><span class="person-status err" style="margin:0">${esc(i.problem)}</span></div>`).join("")}</div>`;
     } else {
       $("#libList").innerHTML = `<div class="people-grid">${people.map((p, k) => {
         const [cls, text] = status(p);
-        return `<article class="person" style="animation-delay:${Math.min(k, 24) * 15}ms"><img src="${esc(p.thumb)}" alt=""><p class="person-name" title="${esc(p.name)}">${esc(p.name)}</p><p class="person-file" title="${esc(p.files.join(", "))}">${esc(p.files.join(", "))}</p>${text ? `<p class="person-status ${cls}">${esc(text)}</p>` : ""}</article>`;
+        const delay = ed || state.libFresh ? "" : `animation-delay:${Math.min(k, 24) * 15}ms`;
+        return `<article class="person${fresh(p)}${isEd(p, "remove") ? " removing" : ""}" style="${delay}">
+            <div class="person-photo"><img src="${esc(p.thumb)}" alt="">${ed ? "" : tools(p)}${isEd(p, "remove") ? confirmRemove(p) : ""}</div>
+            ${isEd(p, "rename") ? nameField(p) : `<p class="person-name" title="${esc(p.name)}">${esc(p.name)}</p>`}
+            <p class="person-file" title="${esc(p.files.join(", "))}">${esc(p.files.join(", "))}</p>
+            ${text ? `<p class="person-status ${cls}">${esc(text)}</p>` : ""}
+          </article>`;
       }).join("")}${invalid.map((i) => `<article class="person invalid"><div class="ph">${ic("triangle-alert", "ico-lg")}</div><p class="person-name">${esc(i.name)}</p><p class="person-file">${esc(baseName(i.file))}</p><p class="person-status err">${esc(i.problem)}</p></article>`).join("")}</div>`;
     }
+    const input = $("#libList .rename input");
+    if (input) { input.focus(); input.select(); }
+    $("#libList .remove-confirm .btn-danger")?.focus();
+  }
+
+  // ---- library edits (in-app only; the files on disk are never changed)
+  function setGallery(g) {
+    state.gallery = g.count ? g : null;
+    if (state.result) state.result.stale = true;
+    updateNav();
+  }
+
+  async function libraryCall(fn, okMsg) {
+    state.libBusy = true;
+    try {
+      const g = await fn();
+      setGallery(g);
+      state.libEdit = null;
+      if (okMsg) toast(typeof okMsg === "function" ? okMsg(g) : okMsg);
+      return g;
+    } catch (err) {
+      toast(err.message, "error", 6000);
+      return null;
+    } finally {
+      state.libBusy = false;
+      if (state.route?.name === "library") render.library();
+    }
+  }
+
+  const jsonBody = (method, body) => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+  async function addPeople(files) {
+    const images = files.filter((f) => IMAGE_RE.test(f.name) || f.type.startsWith("image/"));
+    if (!images.length) { toast("Choose JPG, PNG or WEBP photos. Each file name becomes the person's name.", "error"); return; }
+    const form = new FormData();
+    images.forEach((f) => { form.append("photos", f, f.name); form.append("names", ""); });
+    toast(`Adding ${plural(images.length, "photo")}…`, "ok", 2000);
+    const g = await libraryCall(() => api("/api/people", { method: "POST", body: form }), (r) =>
+      `Added ${r.added.length === 1 ? r.added[0] : plural(r.added.length, "person", "people")}${r.problems.length ? ` · ${r.problems.length} skipped (no face)` : ""}`);
+    if (g) {
+      state.libFresh = g.added;
+      state.libQuery = "";
+      if (state.route?.name === "library") render.library();
+      setTimeout(() => { state.libFresh = null; }, 1600);
+    }
+  }
+
+  function bindLibraryForms() {
+    document.addEventListener("submit", (e) => {
+      const form = e.target.closest("form.rename");
+      if (!form) return;
+      e.preventDefault();
+      const old = form.dataset.name, next = form.elements.n.value.trim();
+      if (!next || next === old) { state.libEdit = null; paintLibList(); return; }
+      libraryCall(() => api("/api/people", jsonBody("PUT", { name: old, new_name: next })), `Renamed to ${next}`);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && state.libEdit) { state.libEdit = null; paintLibList(); }
+    });
   }
 
   // ================================================================== sessions
@@ -1008,6 +1114,14 @@
     csv: exportCsv,
     "lib-view": (el) => { state.libView = el.dataset.v; $$('[data-act="lib-view"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === state.libView))); paintLibList(); },
     "lib-refresh": () => state.folderFiles && loadFolder(state.folderFiles),
+    "lib-add": () => { $("#addInput").value = ""; $("#addInput").click(); },
+    "lib-rename": (el) => { state.libEdit = { mode: "rename", name: el.dataset.name }; state.libConfirmClear = false; paintLibList(); },
+    "lib-remove": (el) => { state.libEdit = { mode: "remove", name: el.dataset.name }; state.libConfirmClear = false; paintLibList(); },
+    "lib-edit-cancel": () => { state.libEdit = null; paintLibList(); },
+    "lib-remove-yes": (el) => { const n = el.dataset.name; libraryCall(() => api("/api/people", jsonBody("DELETE", { name: n })), `Removed ${n}`); },
+    "lib-clear": () => { state.libConfirmClear = true; state.libEdit = null; render.library(); },
+    "lib-clear-cancel": () => { state.libConfirmClear = false; render.library(); },
+    "lib-clear-yes": () => { state.libConfirmClear = false; state.folderFiles = null; libraryCall(() => api("/api/gallery", { method: "DELETE" }), "Library cleared. Your photo files were not touched."); },
   };
 
   function bindActions() {
@@ -1039,6 +1153,8 @@
     }
     $("#folderInput").addEventListener("change", (e) => { const f = [...e.target.files]; if (f.length) loadFolder(f); });
     $("#photoInput").addEventListener("change", (e) => e.target.files[0] && takePhoto(e.target.files[0]));
+    $("#addInput").addEventListener("change", (e) => { const f = [...e.target.files]; if (f.length) addPeople(f); });
+    bindLibraryForms();
     document.addEventListener("input", (e) => {
       if (e.target.id !== "threshold") return;
       const v = parseFloat(e.target.value);
@@ -1100,9 +1216,39 @@
     });
   }
 
+  // ================================================================== theme
+  const THEME_KEY = "whosin-theme";
+  function paintThemeButton() {
+    const btn = $("#themeBtn");
+    if (!btn) return;
+    const dark = document.documentElement.dataset.theme === "dark";
+    btn.innerHTML = `${ic(dark ? "sun" : "moon")}<span>${dark ? "Light mode" : "Dark mode"}</span>`;
+    btn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    btn.setAttribute("aria-pressed", String(dark));
+  }
+  function setTheme(theme, save = true) {
+    const root = document.documentElement;
+    root.classList.add("theme-switching");
+    root.dataset.theme = theme;
+    if (save) { try { localStorage.setItem(THEME_KEY, theme); } catch { /* private mode: still switches */ } }
+    paintThemeButton();
+    setTimeout(() => root.classList.remove("theme-switching"), 300);
+  }
+  function bindTheme() {
+    paintThemeButton();
+    $("#themeBtn")?.addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+    // follow the system setting until the user picks a theme themselves
+    window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", (e) => {
+      let saved = null;
+      try { saved = localStorage.getItem(THEME_KEY); } catch { /* ignore */ }
+      if (!saved) setTheme(e.matches ? "dark" : "light", false);
+    });
+  }
+
   // ================================================================== init
   async function init() {
     $$("[data-icon]").forEach((el) => { el.outerHTML = ic(el.dataset.icon); });
+    bindTheme();
     bindActions();
     bindDrop();
     window.addEventListener("hashchange", route);

@@ -1,127 +1,50 @@
 # AI Collaboration
 
-I built this with **Claude Code** (Claude Opus 5.5) in VS Code, in one continuous session, starting from the brief PDF. Below is how we reached a shared understanding, the key decisions, who suggested what, and the evidence. The full chat history is in [`chat-history/`](chat-history/).
+I used **Claude Code** in VS Code as a coding assistant on this project. I set the direction, made the product and technical decisions, and checked every result myself. The assistant mostly helped with research, writing code faster and testing.
 
-**How I worked with the AI:**
-- I made it **explain the plan before building**.
-- It had to **offer options with trade-offs** instead of choosing silently.
-- I tested its claims against **measured results and screenshots**, not its word.
-- I made the **product decisions** myself: the engine, the app form, the layout, the quality bar, what counts as "done".
-
----
-
-## Decision 1: Plan first, then build
-
-- **AI suggested:** straight after reading the brief, it started setting up the laptop (installing Git and Python) and was about to start coding.
-- **I decided:** stop and explain the whole plan first: the pipeline, the tech, how "unknown" works, the test data and the order of work.
-- **Why:** the brief judges "understanding of the problem". I wanted to agree on the approach before any code existed, so I could change it cheaply.
-- **Evidence:** chat excerpt #1. The AI wrote out the plan (pipeline → threshold → one-name-per-face → UI → docs) and only continued after I said "go with step 1".
-
-## Decision 2: Face recognition engine
-
-- **AI suggested:** three options with trade-offs:
-  - SCRFD + ArcFace through ONNX (recommended);
-  - OpenCV YuNet + SFace (easiest install);
-  - dlib `face_recognition` (needs C++ build tools).
-- **I decided:** SCRFD + ArcFace through ONNX.
-- **Why:** the demo is a *real* group photo with strangers in it, so accuracy on small, angled faces matters most. Running the ONNX files directly avoids the C++ compiler problem on Windows.
-- **Evidence:** on 20 test group photos, 205/205 faces were detected, 148/148 known people were named correctly and 57/57 strangers were marked unknown. See [RESEARCH.md §2 and §4](RESEARCH.md).
-
-## Decision 3: How office staff use it
-
-- **AI suggested:** a local web app (recommended), a desktop window (pywebview) or Streamlit.
-- **I decided:** a local web app: one command, then everything happens in the browser.
-- **Why:** office staff shouldn't touch a terminal. The browser has a built-in folder picker. Streamlit looks generic, and the UI is scored.
-- **Evidence:** `run.bat` opens the browser; no terminal steps are needed after setup.
-
-## Decision 4: Where the test data comes from
-
-- **AI suggested:** I asked where test data could come from, since the brief gives none. It compared LFW, Pins/CelebA, Wikimedia Commons group photos, WIDER FACE and Gemini-generated people.
-- **I decided:** LFW for a measurable test set: a 50-person folder plus collage group photos that use *different* photos of the same people, with strangers added. Real group photos are for a final check.
-- **Why:** with LFW every right answer is known, so I can measure accuracy and tune the "unknown" threshold instead of guessing. Gemini faces aren't consistent between images, so they'd give misleading accuracy.
-- **Evidence:** chat excerpt #2; `scripts/make_test_data.py`, `scripts/evaluate.py`, the threshold sweep table in RESEARCH.md.
-
-## Decision 5: Changing course when the AI's choice failed on my laptop
-
-- **AI suggested:** FastAPI for the server.
-- **What happened:** on my laptop, Windows **Smart App Control blocked** FastAPI's compiled dependency: `ImportError: DLL load failed while importing _pydantic_core: An Application Control policy has blocked this file.`
-- **I decided:** accept the AI's proposed fix: move to **Starlette** (pure Python, what FastAPI is built on) and drop the optional compiled extras, rather than trying other package versions and hoping one gets through.
-- **Why:** the demo runs **on this laptop**. A fix that depends on which DLLs Windows happens to allow could break live in front of the examiners.
-- **Evidence:** commit `48f9ec1` (the reason is in the commit message); before the change, the AI tested which modules load and only `pydantic_core` failed.
-
-## Decision 6: UI layout (I overrode the AI's recommendation)
-
-- **AI suggested:** its own plan was a three-panel workspace: inputs on the left, photo in the middle, results on the right.
-- **I decided:** I asked "what different options do you have?". It showed 4 layouts with mock-ups (three-panel, wizard, photo-first, hybrid), and I picked **C: photo-first, results below**.
-- **Why:** the photo *is* the answer, so it should be the biggest thing on screen. Cards underneath work like a contact sheet, which reads well when screen-sharing in the demo.
-- **Evidence:** chat excerpt #3; commit `00e85b8`.
-
-## Decision 7: Raising the UI quality bar
-
-- **AI suggested:** a clean but plain first version (system fonts, flat cards).
-- **I decided:** partway through, I told it I wanted "a very beautiful UI that actually feels attractive, UI and UX both".
-- **Why:** UI/UX is a judging criterion, and non-technical users judge an app by how it feels.
-- **What changed because of this:**
-  - a bundled Inter font (still offline) and a dark "lightbox" stage for the photo;
-  - a scanning animation while faces are found, and name tags that animate in;
-  - a spotlight on the face when you hover its card;
-  - "Strong / Good / Weak match" wording and a "Might be X?" hint for close unknowns;
-  - paste with Ctrl+V, drag and drop anywhere, and upload progress.
-- **Evidence:** commit `00e85b8`. The AI checked the result by driving the real app in Edge and taking screenshots (light and dark, desktop and mobile). From those screenshots it found and fixed overlapping name tags, numbering that jumped around, and a toast covering buttons.
-
-## Decision 8: Numbering, and one name per person
-
-- **AI suggested:** faces numbered left to right; each name assigned to at most one face.
-- **I decided:**
-  - Numbering: after seeing screenshots where #2 was top-left and #1 bottom-left, number faces **in reading order** (row by row).
-  - Names: keep one-to-one assignment. When I asked "what if I want to match multiple people in a single photo?", it explained that every face is matched separately and a name is used once per photo. I agreed, because a real person can't appear twice.
-- **Why:** staff read a group photo row by row. Duplicate names between look-alikes are worse than an honest "unknown".
-- **Evidence:** `app/face_engine.py` `reading_order()`, `app/matcher.py` `match_faces()`.
-
-## Decision 9: Checking the work against the brief
-
-- **AI suggested:** keep building features and test on real photos.
-- **I decided:** stop and audit everything against the brief, point by point.
-- **Why:** a working app isn't the deliverable; the brief also requires four docs.
-- **Evidence:** the audit found 3 docs missing and the README nearly empty, and showed the deadline had already passed. This file, RESEARCH.md, ARCHITECTURE.md and the README came from that audit. That was my mistake in time management: I should have asked for the docs alongside the code.
-
-## Decision 10: Redesigning the UI to my own spec
-
-- **AI suggested:** the photo-first single page from Decision 6 was finished and working.
-- **I decided:** it still looked AI-generated. I wrote a full design spec: a sidebar app called "Who's In?" with a forest green / ivory / amber palette, Manrope + DM Sans, an Overview dashboard, a 3-step Identify wizard, People Library and Recent Sessions pages, CSV export, label toggles and an "Unrecognised faces" section.
-- **What the AI pushed back on:** my spec suggested React + Vite + Tailwind. The AI kept plain HTML/CSS/JS because the spec also said to keep the existing stack, and Node.js isn't installed on the demo laptop. It bundled the fonts and Lucide icons locally so the app stays offline. It also refused to fake things the backend can't do. Processing shows only real stages (upload progress, then "detecting and matching"), and "confidence" is shown as the real similarity score, not an invented percentage. The browser hides the folder's full path, so the app says that instead of making one up.
-- **Why:** UI/UX is judged, and office staff need to understand the app without reading anything.
-- **Evidence:** the redesign commit. The AI drove every page in Edge at desktop, tablet and phone widths. From the screenshots it fixed a misleading "closest match" shown for a face with 0.08 similarity, a collapsed results panel, and sideways scrolling on phones.
+**How I worked:**
+- I agreed the plan before any code was written.
+- When there was a real choice, I asked for options with trade-offs and picked one myself.
+- I trusted measured results and screenshots, not claims.
+- I decided the engine, the app form, the layout, the quality bar and what counts as "done".
 
 ---
 
-## Chat excerpts
+## Key decisions
 
-### Chat excerpt #1: getting the plan before code (Decision 1)
-> **me:** first tell me how are we planning to do this task.
->
-> **AI:** Git and Python 3.11 are now installed. I've paused there so you can check the plan before any code gets written. … The app runs fully offline on your laptop. Office staff open a folder of 50 named photos, upload one group photo, and see a name or "unknown" on every face, plus a list. … Each group face is compared with all 50 known faces. If the closest match is similar enough, it gets that name; otherwise it's marked **unknown**. Each person in the folder can be assigned to at most one face … Shall I go ahead with step 1, or would you change anything first?
->
-> **me:** where can we get the test data? and go with step 1
+### 1. Plan first, then build
+I paused setup and wrote out the full approach first: pipeline, tech, how "unknown" works, test data and order of work. The brief judges understanding of the problem, and changing a plan is cheaper than changing code.
 
-### Chat excerpt #2: test data (Decision 4)
-> **me:** where can we get the test data?
->
-> **AI:** … **LFW (Labeled Faces in the Wild)** … 13k photos of 5.7k named public figures … **Main source.** Pick 50 people with 2+ photos: one goes in the folder, the others go into group photos. People we leave out become the "unknowns". … **Your own photos** … Gemini faces aren't always consistent between images, so check them first.
+### 2. Face recognition engine
+I compared SCRFD + ArcFace (ONNX), OpenCV YuNet + SFace, and dlib `face_recognition`, and chose **SCRFD + ArcFace through ONNX**. The demo uses a real group photo with strangers, so accuracy on small, angled faces matters most, and running the ONNX files directly avoids needing C++ build tools on Windows.
+*Result:* on 20 test group photos, 205/205 faces detected, 148/148 known people named correctly, 57/57 strangers marked unknown ([RESEARCH.md §2 and §4](RESEARCH.md)).
 
-### Chat excerpt #3: choosing the layout myself (Decisions 6 and 7)
-> **AI:** Should I go ahead with that layout [three-panel], or do you want something different …?
->
-> **me:** what different options do you have?
->
-> **AI:** *(shows 4 mock-ups: A. Three-panel workspace · B. Guided steps (wizard) · C. Photo-first, results below · D. Hybrid)*
->
-> **me:** *(selects)* C. Photo-first, results below
->
-> **me (while it was building):** i want a very beautiful UI that actually feels attractive UI and UX both should be very nicely working and aesthetic
+### 3. How office staff use it
+I chose a **local web app** over a desktop window or Streamlit: one command, then everything happens in the browser. Staff never touch a terminal, the browser has a folder picker, and Streamlit looks generic. `run.bat` opens the browser.
 
----
+### 4. Test data
+The brief gives no data, so I built a measurable test set from **LFW**: a 50-person folder plus collage group photos using *different* photos of the same people, with strangers added. Every right answer is known, so I could measure accuracy and tune the "unknown" threshold instead of guessing. I ruled out AI-generated faces because they aren't consistent between images. See `scripts/make_test_data.py`, `scripts/evaluate.py` and the threshold sweep in RESEARCH.md.
 
-## Full chat history
+### 5. Switching from FastAPI to Starlette
+Windows **Smart App Control blocked** FastAPI's compiled dependency on my laptop (`DLL load failed while importing _pydantic_core`). Rather than trying package versions until one got through, I moved to **Starlette** (pure Python, what FastAPI is built on). The demo runs on this laptop, so the fix can't depend on which DLLs Windows happens to allow. See commit `48f9ec1`.
 
-The complete conversation, from my very first prompt (the brief PDF plus the repo link), is in [`chat-history/`](chat-history/).
+### 6. UI layout
+I reviewed four layouts (three-panel, wizard, photo-first, hybrid) and picked **photo-first, results below**. The photo *is* the answer, so it should be the biggest thing on screen, and the cards underneath read well when screen-sharing. Commit `00e85b8`.
+
+### 7. Raising the UI quality bar
+The first version was clean but plain. Since UI/UX is judged and non-technical users judge an app by how it feels, I pushed for more polish: bundled Inter font (still offline), a dark stage for the photo, a scanning animation, animated name tags, a spotlight on hover, "Strong / Good / Weak match" wording, a "Might be X?" hint, Ctrl+V paste, drag and drop and upload progress. I checked it in Edge in light/dark and desktop/mobile, which caught overlapping name tags, jumping numbers and a toast covering buttons.
+
+### 8. Numbering and one name per person
+- Faces are numbered **in reading order** (row by row), because that's how staff read a group photo. I changed this after seeing #2 top-left and #1 bottom-left.
+- Each name is used **at most once per photo**. A real person can't appear twice, and a duplicate name between look-alikes is worse than an honest "unknown".
+
+See `reading_order()` in `app/face_engine.py` and `match_faces()` in `app/matcher.py`.
+
+### 9. Auditing against the brief
+Before polishing further, I checked the work against the brief point by point. A working app isn't the whole deliverable, and the audit showed three docs missing and a thin README. That was my time-management mistake: I should have written the docs alongside the code. This file, RESEARCH.md, ARCHITECTURE.md and the README came from that audit.
+
+### 10. Redesign to my own spec
+The single-page version still looked generic, so I wrote a full design spec: a sidebar app called "Who's In?" with a forest green / ivory / amber palette, Manrope + DM Sans, an Overview dashboard, a 3-step Identify wizard, People Library and Recent Sessions pages, CSV export, label toggles and an "Unrecognised faces" section.
+- I kept plain HTML/CSS/JS instead of React + Vite + Tailwind, because Node.js isn't on the demo laptop. Fonts and Lucide icons are bundled locally so the app stays offline.
+- Nothing is faked: processing shows only real stages, "confidence" is the real similarity score, and since the browser hides a folder's full path, the app says so instead of inventing one.
+- Testing at desktop, tablet and phone widths caught a misleading "closest match" on a face with 0.08 similarity, a collapsed results panel and sideways scrolling on phones.

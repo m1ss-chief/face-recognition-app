@@ -10,7 +10,7 @@
 |---|---|
 | [RESEARCH.md](RESEARCH.md) | Options compared, what was picked and rejected, with links |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture diagram and trade-offs |
-| [AI_COLLAB.md](AI_COLLAB.md) | Key decisions, how I steered the AI, chat excerpts and full history |
+| [AI_COLLAB.md](AI_COLLAB.md) | Key decisions and how I used AI tooling |
 
 ---
 

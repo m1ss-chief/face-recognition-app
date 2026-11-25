@@ -18,7 +18,7 @@ import time
 import uuid
 import webbrowser
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2
@@ -63,6 +63,12 @@ class Person:
     embedding: np.ndarray
     thumb: str
     files: list[str]
+    parts: list[np.ndarray] = field(default_factory=list)  # one embedding per photo
+
+    def rebuild(self) -> None:
+        """Average the per-photo embeddings into one template."""
+        emb = np.mean(self.parts, axis=0)
+        self.embedding = emb / np.linalg.norm(emb)
 
 
 @dataclass
@@ -194,6 +200,23 @@ def parse_threshold(value) -> float:
 # --------------------------------------------------------------------------- #
 # Core work (synchronous; run in a worker thread so the server stays responsive)
 # --------------------------------------------------------------------------- #
+def read_reference(eng: FaceEngine, data: bytes) -> tuple[np.ndarray | None, int, str | None]:
+    """Embedding, face count and thumbnail for one reference photo (cached by content hash)."""
+    key = hashlib.sha1(data).hexdigest()
+    if key not in state.embedding_cache:
+        try:
+            img = load_image(data)
+        except Exception:  # noqa: BLE001
+            raise ValueError("unreadable") from None
+        face, n_faces = eng.detect_reference(img)
+        state.embedding_cache[key] = (
+            face.embedding if face is not None else None,
+            n_faces,
+            face_thumb(img, face) if face is not None else None,
+        )
+    return state.embedding_cache[key]
+
+
 def do_load_gallery(files: list[tuple[str, bytes]]) -> dict:
     """Replace the known-people gallery with the images from the chosen folder."""
     global gallery_version
@@ -204,20 +227,11 @@ def do_load_gallery(files: list[tuple[str, bytes]]) -> dict:
 
     for filename, data in files:
         name = name_from_filename(filename)
-        key = hashlib.sha1(data).hexdigest()
-        if key in state.embedding_cache:
-            emb, n_faces, thumb = state.embedding_cache[key]
-        else:
-            try:
-                img = load_image(data)
-            except Exception:  # noqa: BLE001
-                issues.append({"name": name, "file": filename, "problem": "Could not read this image"})
-                continue
-            face, n_faces = eng.detect_reference(img)
-            emb = face.embedding if face is not None else None
-            thumb = face_thumb(img, face) if face is not None else None
-            state.embedding_cache[key] = (emb, n_faces, thumb)
-
+        try:
+            emb, n_faces, thumb = read_reference(eng, data)
+        except ValueError:
+            issues.append({"name": name, "file": filename, "problem": "Could not read this image"})
+            continue
         if emb is None:
             issues.append({"name": name, "file": filename, "problem": "No face found"})
             continue
@@ -228,7 +242,7 @@ def do_load_gallery(files: list[tuple[str, bytes]]) -> dict:
             issues.append({"name": name, "file": filename,
                            "problem": "Same name as another photo, both photos used", "warning": True})
         seen.add(name)
-        people.append(Person(name=name, embedding=emb, thumb=thumb or "", files=[base_name(filename)]))
+        people.append(Person(name=name, embedding=emb, thumb=thumb or "", files=[base_name(filename)], parts=[emb]))
 
     if not people:
         raise ApiError(400, "No usable face photos were found in that folder.")
@@ -239,9 +253,10 @@ def do_load_gallery(files: list[tuple[str, bytes]]) -> dict:
         merged.setdefault(p.name, []).append(p)
     new_people = []
     for name, ps in merged.items():
-        emb = np.mean([p.embedding for p in ps], axis=0)
-        new_people.append(Person(name=name, embedding=emb / np.linalg.norm(emb), thumb=ps[0].thumb,
-                                 files=[f for p in ps for f in p.files]))
+        person = Person(name=name, embedding=ps[0].embedding, thumb=ps[0].thumb,
+                        files=[f for p in ps for f in p.files], parts=[p.embedding for p in ps])
+        person.rebuild()
+        new_people.append(person)
     new_people.sort(key=lambda p: p.name.lower())
     state.people = new_people
     state.issues = issues
@@ -249,6 +264,91 @@ def do_load_gallery(files: list[tuple[str, bytes]]) -> dict:
     state.folder = first.split("/", 1)[0] if "/" in first else ""
     state.files_received = len(files)
     gallery_version += 1
+    return state.gallery_info()
+
+
+# --------------------------------------------------------------------------- #
+# Library edits. These change the in-app library only, never the files on disk.
+# --------------------------------------------------------------------------- #
+def clean_name(value) -> str:
+    name = re.sub(r"\s+", " ", str(value or "")).strip()
+    if not name:
+        raise ApiError(400, "Please type a name.")
+    if len(name) > 80:
+        raise ApiError(400, "That name is too long (80 characters at most).")
+    return name
+
+
+def find_person(name: str) -> Person:
+    for p in state.people:
+        if p.name == name:
+            return p
+    raise ApiError(404, f"\u201c{name}\u201d is not in the library.")
+
+
+def library_changed() -> None:
+    global gallery_version
+    state.people.sort(key=lambda p: p.name.lower())
+    gallery_version += 1
+
+
+def do_add_people(entries: list[tuple[str, str, bytes]]) -> dict:
+    """Add one photo per entry (name, filename, bytes). Same name = extra photo of that person."""
+    eng = get_engine()
+    added, problems = [], []
+    for raw_name, filename, data in entries:
+        name = clean_name(raw_name or name_from_filename(filename))
+        try:
+            emb, n_faces, thumb = read_reference(eng, data)
+        except ValueError:
+            problems.append(f"{base_name(filename)}: could not read this image")
+            continue
+        if emb is None:
+            problems.append(f"{base_name(filename)}: no face found")
+            continue
+        existing = next((p for p in state.people if p.name == name), None)
+        if existing:
+            existing.parts.append(emb)
+            existing.files.append(base_name(filename))
+            existing.rebuild()
+        else:
+            state.people.append(Person(name=name, embedding=emb, thumb=thumb or "",
+                                       files=[base_name(filename)], parts=[emb]))
+        if n_faces > 1:
+            state.issues.append({"name": name, "file": filename,
+                                 "problem": f"{n_faces} faces found, used the largest one", "warning": True})
+        state.files_received += 1
+        added.append(name)
+    if not added:
+        raise ApiError(400, "No face was found. " + "; ".join(problems))
+    library_changed()
+    return {**state.gallery_info(), "added": added, "problems": problems}
+
+
+def do_rename(old: str, new) -> dict:
+    person = find_person(old)
+    new = clean_name(new)
+    if new != old and any(p.name == new for p in state.people):
+        raise ApiError(409, f"Someone called \u201c{new}\u201d is already in the library.")
+    person.name = new
+    for issue in state.issues:
+        if issue["name"] == old:
+            issue["name"] = new
+    library_changed()
+    return state.gallery_info()
+
+
+def do_remove(name: str) -> dict:
+    person = find_person(name)
+    state.people.remove(person)
+    state.issues = [i for i in state.issues if i["name"] != name or not i.get("warning")]
+    library_changed()
+    return state.gallery_info()
+
+
+def do_clear() -> dict:
+    state.people, state.issues, state.folder, state.files_received = [], [], "", 0
+    library_changed()
     return state.gallery_info()
 
 
@@ -318,6 +418,29 @@ async def get_gallery(request: Request) -> JSONResponse:
     return JSONResponse(state.gallery_info())
 
 
+async def clear_gallery(request: Request) -> JSONResponse:
+    return JSONResponse(do_clear())
+
+
+async def add_people(request: Request) -> JSONResponse:
+    form = await request.form(max_files=500, max_fields=1000)
+    photos, names = form.getlist("photos"), form.getlist("names")
+    entries = []
+    for i, f in enumerate(photos):
+        if isinstance(f, UploadFile) and Path(f.filename or "").suffix.lower() in IMAGE_EXTS:
+            entries.append((str(names[i]) if i < len(names) else "", f.filename or "", await f.read()))
+    if not entries:
+        return JSONResponse({"error": "Choose a JPG, PNG or WEBP photo of the person."}, 400)
+    return JSONResponse(await run_in_threadpool(do_add_people, entries))
+
+
+async def edit_person(request: Request) -> JSONResponse:
+    body = await request.json()
+    if request.method == "DELETE":
+        return JSONResponse(do_remove(str(body.get("name", ""))))
+    return JSONResponse(do_rename(str(body.get("name", "")), body.get("new_name")))
+
+
 async def list_sessions(request: Request) -> JSONResponse:
     return JSONResponse({"sessions": [s.summary() for s in reversed(state.sessions.values())]})
 
@@ -382,6 +505,9 @@ app = Starlette(
         Route("/api/status", status),
         Route("/api/gallery", load_gallery, methods=["POST"]),
         Route("/api/gallery", get_gallery, methods=["GET"]),
+        Route("/api/gallery", clear_gallery, methods=["DELETE"]),
+        Route("/api/people", add_people, methods=["POST"]),
+        Route("/api/people", edit_person, methods=["PUT", "DELETE"]),
         Route("/api/sessions", list_sessions),
         Route("/api/sessions/{sid}", get_session),
         Route("/api/identify", identify, methods=["POST"]),
