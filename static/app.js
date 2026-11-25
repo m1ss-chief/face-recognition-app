@@ -47,7 +47,7 @@
   // ================================================================== server
   function markServer(ok) {
     $("#serverDot").classList.toggle("down", !ok);
-    $("#serverText").textContent = ok ? "All processing happens locally" : "Local engine is not running";
+    $("#serverText").textContent = ok ? "Processing locally" : "Engine not running";
     $(".local-note small").textContent = ok ? "No cloud · No external AI" : "Start it again with run.bat";
   }
 
@@ -165,17 +165,17 @@
   function paintOverview() {
     $("#heroVisual").innerHTML = heroVisual();
     const g = state.gallery, st = state.stats;
-    const metric = (icon, label, value, foot, warm) => `
-      <article class="metric">
-        <div class="metric-top"><span>${label}</span><span class="metric-icon${warm ? " warm" : ""}">${ic(icon)}</span></div>
+    const metric = (tone, label, value, foot) => `
+      <article class="metric ${tone}">
+        <div class="metric-top">${label}</div>
         ${value === null ? `<div class="skel" style="height:30px;width:56px;margin-top:12px"></div>` : `<div class="metric-value">${value}</div>`}
         <div class="metric-foot">${foot}</div>
       </article>`;
     $("#metrics").innerHTML = [
-      metric("users", "People in library", g ? g.count : 0, g ? (g.folder ? `From “${esc(g.folder)}”` : "Reference folder loaded") : "No folder opened yet"),
-      metric("image", "Photos analysed", st ? st.photos_analysed : null, "Since the app was started"),
-      metric("user-round-check", "People identified", st ? st.identified : null, "Across recent sessions"),
-      metric("user-round-x", "Unknown faces", st ? st.unknown : null, "Not in your library", true),
+      metric("", "People in library", g ? g.count : 0, g ? (g.folder ? `From “${esc(g.folder)}”` : "Reference folder loaded") : "No folder opened yet"),
+      metric("", "Photos analysed", st ? st.photos_analysed : null, "Since the app was started"),
+      metric("ok", "People identified", st ? st.identified : null, "Across recent sessions"),
+      metric("warm", "Unknown faces", st ? st.unknown : null, "Not in your library"),
     ].join("");
 
     const ss = state.sessions;
@@ -183,16 +183,15 @@
       $("#activity").innerHTML = `<div style="padding:18px 22px;display:grid;gap:12px">${'<div class="skel" style="height:38px"></div>'.repeat(3)}</div>`;
     } else if (!ss.length) {
       $("#activity").innerHTML = `
-        <div class="empty">
-          <div class="empty-art">${ic("history")}</div>
-          <h3>No activity yet</h3>
-          <p>Photos you analyse will be listed here with how many people were recognised.</p>
-          <a class="btn btn-primary" href="#/identify">Start identification ${ic("arrow-right")}</a>
+        <div class="empty-row">
+          <span class="empty-art sm">${ic("history")}</span>
+          <div><b>No activity yet</b><p>Photos you analyse appear here, with how many people were recognised.</p></div>
+          <a class="btn" href="#/identify">Identify a photo ${ic("arrow-right")}</a>
         </div>`;
     } else {
       $("#activity").innerHTML = `
         <table class="table">
-          <thead><tr><th>Session</th><th class="hide-sm">Date &amp; time</th><th class="num">Detected</th><th class="num hide-sm">Identified</th><th class="num hide-sm">Unknown</th><th class="hide-sm">Status</th></tr></thead>
+          <thead><tr><th>Session</th><th class="hide-sm">Date &amp; time</th><th class="num">Detected</th><th class="num hide-sm">Identified</th><th class="num hide-sm">Unknown</th><th class="hide-sm">Result</th></tr></thead>
           <tbody>${ss.slice(0, 5).map((s) => `
             <tr data-act="open-session" data-id="${s.id}" tabindex="0">
               <td><div class="sess-cell"><img src="${esc(s.preview)}" alt=""><b title="${esc(s.filename)}">${esc(s.filename)}</b></div></td>
@@ -200,7 +199,7 @@
               <td class="num">${s.faces}</td>
               <td class="num hide-sm">${s.identified}</td>
               <td class="num hide-sm">${s.unknown}</td>
-              <td class="hide-sm"><span class="chip ok">Complete</span></td>
+              <td class="hide-sm"><span class="ratio" title="${s.identified} of ${s.faces} faces named"><span style="flex:${s.identified}"></span><span class="u" style="flex:${s.unknown}"></span></span></td>
             </tr>`).join("")}
           </tbody>
         </table>`;
@@ -526,13 +525,12 @@
     $("#resultsRoot").innerHTML = `
       ${top}
       <div class="res-head">
-        <div><h1 id="resTitle"></h1><p id="resLede"></p></div>
+        <div><h1 id="resTitle"></h1><p id="resLede"></p><div class="res-stats" id="resStats"></div></div>
         <div class="head-actions">
           <button class="btn" type="button" data-act="csv">${ic("file-spreadsheet")}Export CSV</button>
           <button class="btn btn-primary" type="button" data-act="download">${ic("download")}Download annotated photo</button>
         </div>
       </div>
-      <div class="res-stats" id="resStats"></div>
       ${r.stale ? `<div class="notice">${ic("triangle-alert")}<span>The people library changed after this photo was analysed, so these names come from the earlier folder. <button class="link" type="button" data-act="run-another">Run it again</button> to use the current library.</span></div>` : ""}
       <div class="res-layout">
         <section class="viewer" aria-label="Photograph">
@@ -543,6 +541,7 @@
             <div class="strict" title="How similar a face must be to a library photo before it gets a name">
               <label for="threshold">Match strictness</label>
               <span>Relaxed</span><input id="threshold" type="range" min="0.2" max="0.6" step="0.01" value="${r.threshold}" ${r.stale ? "disabled" : ""} aria-describedby="strictHelp"><span>Strict</span>
+              <output id="strictVal" for="threshold">${r.threshold.toFixed(2)}</output>
               <span id="strictHelp" hidden>Higher strictness gives fewer names but fewer mistakes.</span>
             </div>
           </div>
@@ -550,6 +549,10 @@
             <img id="photo" src="${r.image}" alt="Group photograph with face labels" width="${r.width}" height="${r.height}">
             <div class="overlay" id="overlay"></div>
           </div></div>
+          <div class="viewer-foot">
+            <span><b>${esc(r.filename)}</b> · ${r.width} × ${r.height} px · ${fmtWhen(r.created)}</span>
+            <span class="legend"><span><i></i>Identified</span><span><i class="u"></i>Unknown</span></span>
+          </div>
         </section>
         <aside class="side-panel" aria-label="People detected">
           <header class="panel-head"><div><h3>People detected</h3><p class="muted">Select a face to see it on the photo.</p></div></header>
@@ -563,7 +566,9 @@
       </div>`;
     paintResultData(r, true);
     const img = $("#photo");
-    (img.complete ? Promise.resolve() : img.decode().catch(() => {})).then(() => layoutTags());
+    (img.complete ? Promise.resolve() : img.decode().catch(() => {}))
+      .then(() => document.fonts?.ready)
+      .then(() => requestAnimationFrame(() => layoutTags()));
   }
 
   function libraryThumb(name) {
@@ -572,7 +577,6 @@
 
   function itemHtml(f, i, thr) {
     const known = !!f.name;
-    const sub = known ? `${quality(f.score)} · ${f.score.toFixed(2)}` : "Not in library";
     // Only mention a "closest" library face when it is at least somewhat similar;
     // at very low similarity it would just be a random face.
     const close = !known && f.best_guess && f.score >= 0.2;
@@ -589,8 +593,8 @@
         <button class="res-row" type="button" data-act="sel" data-i="${i}" aria-expanded="false">
           <span class="res-no">${pad(i + 1)}</span>
           <img class="res-thumb" src="${esc(f.thumb)}" alt="">
-          <span style="min-width:0"><span class="res-name" style="display:block">${esc(f.name || "Unknown")}</span><span class="res-sub">${sub}${f.low_quality ? " · small face" : ""}</span></span>
-          <span class="chip ${known ? "ok" : "unknown"}">${known ? "Identified" : "Unknown"}</span>
+          <span style="min-width:0"><span class="res-name">${esc(f.name || "Unknown")}</span><span class="res-sub">${known ? quality(f.score) : "Not in library"}${f.low_quality ? " · small face" : ""}</span></span>
+          <span class="res-score" title="Similarity to the library photo">${known ? f.score.toFixed(2) : ""}</span>
         </button>
         <div class="res-detail"><div><div class="detail-inner">
           ${refThumb ? `<div class="compare"><figure><img src="${esc(f.thumb)}" alt=""><figcaption>In photo</figcaption></figure><span class="vs">vs</span><figure><img src="${esc(refThumb)}" alt=""><figcaption>Library</figcaption></figure></div>` : ""}
@@ -608,6 +612,7 @@
     $("#resLede").innerHTML = faces.length
       ? `We found and analysed ${plural(faces.length, "face")} in <b>${esc(r.filename)}</b>.`
       : "Try a photo where faces are larger, well lit and facing the camera.";
+    if ($("#strictVal")) $("#strictVal").textContent = r.threshold.toFixed(2);
     $("#resStats").innerHTML = `
       <div class="res-stat"><b>${faces.length}</b><span>Faces detected</span></div>
       <div class="res-stat ok"><b>${known}</b><span>Identified</span></div>
@@ -630,7 +635,7 @@
     const unk = faces.map((f, i) => [f, i]).filter(([f]) => !f.name);
     $("#unknownSlot").innerHTML = unk.length ? `
       <section class="unknowns">
-        <h3>Unrecognised faces</h3>
+        <h3>Unrecognised faces <em>${unk.length}</em></h3>
         <p>These people were detected but could not be matched with your reference library.</p>
         <div class="unknown-row">${unk.map(([f, i]) => `<button class="unknown-face" type="button" data-act="sel" data-i="${i}" data-scroll="photo"><img src="${esc(f.thumb)}" alt="Unknown face ${i + 1}"><span>${pad(i + 1)}</span></button>`).join("")}</div>
       </section>` : "";
@@ -932,17 +937,17 @@
     }
     const status = (p) => {
       const w = p.files.map((f) => warnByFile.get(f)).find(Boolean);
-      return w ? ["warn", w] : ["", p.files.length > 1 ? `${p.files.length} photos combined` : "Ready for matching"];
+      return w ? ["warn", w] : p.files.length > 1 ? ["", `${p.files.length} photos combined`] : ["", ""];
     };
     if (state.libView === "list") {
       $("#libList").innerHTML = `<div class="people-list">${people.map((p) => {
         const [cls, text] = status(p);
-        return `<div class="row"><img src="${esc(p.thumb)}" alt=""><b>${esc(p.name)}</b><span class="file">${esc(p.files.join(", "))}</span><span class="person-status ${cls}" style="margin:0">${esc(text)}</span></div>`;
+        return `<div class="row"><img src="${esc(p.thumb)}" alt=""><b>${esc(p.name)}</b><span class="file">${esc(p.files.join(", "))}</span>${text ? `<span class="person-status ${cls}" style="margin:0">${esc(text)}</span>` : "<span></span>"}</div>`;
       }).join("")}${invalid.map((i) => `<div class="row"><span class="ph">${ic("triangle-alert", "ico-sm")}</span><b>${esc(i.name)}</b><span class="file">${esc(baseName(i.file))}</span><span class="person-status err" style="margin:0">${esc(i.problem)}</span></div>`).join("")}</div>`;
     } else {
       $("#libList").innerHTML = `<div class="people-grid">${people.map((p, k) => {
         const [cls, text] = status(p);
-        return `<article class="person" style="animation-delay:${Math.min(k, 24) * 15}ms"><img src="${esc(p.thumb)}" alt=""><p class="person-name" title="${esc(p.name)}">${esc(p.name)}</p><p class="person-file" title="${esc(p.files.join(", "))}">${esc(p.files.join(", "))}</p><p class="person-status ${cls}">${esc(text)}</p></article>`;
+        return `<article class="person" style="animation-delay:${Math.min(k, 24) * 15}ms"><img src="${esc(p.thumb)}" alt=""><p class="person-name" title="${esc(p.name)}">${esc(p.name)}</p><p class="person-file" title="${esc(p.files.join(", "))}">${esc(p.files.join(", "))}</p>${text ? `<p class="person-status ${cls}">${esc(text)}</p>` : ""}</article>`;
       }).join("")}${invalid.map((i) => `<article class="person invalid"><div class="ph">${ic("triangle-alert", "ico-lg")}</div><p class="person-name">${esc(i.name)}</p><p class="person-file">${esc(baseName(i.file))}</p><p class="person-status err">${esc(i.problem)}</p></article>`).join("")}</div>`;
     }
   }
@@ -1034,7 +1039,12 @@
     }
     $("#folderInput").addEventListener("change", (e) => { const f = [...e.target.files]; if (f.length) loadFolder(f); });
     $("#photoInput").addEventListener("change", (e) => e.target.files[0] && takePhoto(e.target.files[0]));
-    document.addEventListener("input", (e) => { if (e.target.id === "threshold") onThreshold(parseFloat(e.target.value)); });
+    document.addEventListener("input", (e) => {
+      if (e.target.id !== "threshold") return;
+      const v = parseFloat(e.target.value);
+      $("#strictVal").textContent = v.toFixed(2);
+      onThreshold(v);
+    });
   }
 
   // ================================================================== drag & drop / paste
