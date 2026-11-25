@@ -85,6 +85,14 @@ I built this with **Claude Code** (Claude Opus 5.5) in VS Code, in one continuou
 - **Why:** a working app isn't the deliverable; the brief also requires four docs.
 - **Evidence:** the audit found 3 docs missing and the README nearly empty, and showed the deadline had already passed. This file, RESEARCH.md, ARCHITECTURE.md and the README came from that audit. That was my mistake in time management: I should have asked for the docs alongside the code.
 
+## Decision 10: Redesigning the UI to my own spec
+
+- **AI suggested:** the photo-first single page from Decision 6 was finished and working.
+- **I decided:** it still looked AI-generated. I wrote a full design spec: a sidebar app called "Who's In?" with a forest green / ivory / amber palette, Manrope + DM Sans, an Overview dashboard, a 3-step Identify wizard, People Library and Recent Sessions pages, CSV export, label toggles and an "Unrecognised faces" section.
+- **What the AI pushed back on:** my spec suggested React + Vite + Tailwind. The AI kept plain HTML/CSS/JS because the spec also said to keep the existing stack, and Node.js isn't installed on the demo laptop. It bundled the fonts and Lucide icons locally so the app stays offline. It also refused to fake things the backend can't do. Processing shows only real stages (upload progress, then "detecting and matching"), and "confidence" is shown as the real similarity score, not an invented percentage. The browser hides the folder's full path, so the app says that instead of making one up.
+- **Why:** UI/UX is judged, and office staff need to understand the app without reading anything.
+- **Evidence:** the redesign commit. The AI drove every page in Edge at desktop, tablet and phone widths. From the screenshots it fixed a misleading "closest match" shown for a face with 0.08 similarity, a collapsed results panel, and sideways scrolling on phones.
+
 ---
 
 ## Chat excerpts

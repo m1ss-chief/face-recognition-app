@@ -720,3 +720,1117 @@ The transcript of this session is stored locally. I'll check its structure, then
 > 🔧 `Bash`: Re-export chat history and verify user turns
 
 > 🔧 `Bash`: Add chat history and docs, commit and push
+
+### 🤖 AI
+
+README, RESEARCH, AI_COLLAB and ARCHITECTURE are written and pushed to GitHub, along with the full chat history. The one gap is the Archify diagram. These commits are dated after the deadline, so ask your placement team whether they'll count.
+
+## What's in the repo now
+| Doc | Contents |
+|---|---|
+| [README.md](README.md) | Install with `setup.bat`, run with `run.bat`, how to use it, how to test it without your own photos, a troubleshooting table, and licences |
+| [RESEARCH.md](RESEARCH.md) | What the brief really asks for, 7 face recognition options compared with links, the matching design, data sources, the measured strictness results, and why Starlette instead of FastAPI |
+| [AI_COLLAB.md](AI_COLLAB.md) | 9 decisions (AI suggested / I decided / why / evidence) and 3 chat excerpts quoted from this conversation |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How a request flows, the trade-offs table and known limitations. The diagram is a Mermaid stand-in until Archify runs. |
+| [chat-history/](chat-history/) | The whole session from your first prompt, generated from the local transcript. Your messages and my replies are word for word. Tool output and your email are removed. |
+
+## Two things only you can do
+
+**1. Archify.** The brief requires the diagram to be made with Archify, which needs Node.js. I wasn't allowed to install Node.js myself. Either:
+- run `winget install OpenJS.NodeJS.LTS` yourself, or
+- tell me to go ahead and approve the install when asked.
+
+After that, I'll install Archify as its instructions say, generate the diagram, put it in `docs/` and replace the stand-in.
+
+**2. Read AI_COLLAB.md and change anything you'd say differently.** It's written in your voice ("I decided…") and is based only on what's in this chat. Two places worth checking:
+- **Decisions 2 and 3:** you accepted my recommendations. I said so honestly, but if you had your own reasons, add them.
+- **Decision 9:** it admits the docs came late. Keep or soften that as you prefer, but don't remove the facts, since the commit dates show them anyway.
+
+Once Archify is done, I'll export the chat history again so it includes this last part.
+
+### 🧑 Me
+
+i want the UI to look better not AI generated. 
+
+<pasted_content id="3361">
+# ROLE & DESIGN EXPECTATIONS
+
+Act as a world-class Senior Product Designer, UI/UX Architect, and Senior Frontend Engineer with 10+ years of experience designing premium SaaS products and enterprise applications.
+
+Your task is to design and implement an exceptionally polished frontend for a desktop-first application called **Who's In? — Intelligent Photo Identification**.
+
+This is not supposed to look like a generic AI-generated dashboard, a hackathon prototype, or a template-based admin panel.
+
+I want a product that looks like it was designed by a highly experienced design team at a premium technology company.
+
+The UI must feel intentional, elegant, modern, intuitive, and visually distinctive.
+
+Prioritise:
+- Exceptional visual hierarchy.
+- Beautiful typography and font pairing.
+- A sophisticated and cohesive colour palette.
+- Generous whitespace and precise spacing.
+- Meaningful micro-interactions and animations.
+- Premium-looking cards, buttons, dialogs, and navigation.
+- A smooth and intuitive user journey.
+- Responsive and accessible design.
+- Realistic application states rather than static mockups.
+
+Do not compromise functionality for aesthetics.
+
+---
+
+# 1. PRODUCT IDENTITY
+
+**Product name:** Who's In?
+
+**Tagline:** Every face has a name.
+
+**Product description:** An intelligent, offline-first photo identification workspace that helps teams identify people in group photographs using a locally maintained reference library.
+
+The product should communicate:
+- Privacy.
+- Trust.
+- Simplicity.
+- Precision.
+- Intelligence.
+- Professionalism.
+
+It should feel like a premium desktop productivity application rather than a consumer social media product.
+
+Create a subtle visual identity around photography, recognition, and human identity.
+
+Use a minimal custom logo combining a photographic frame and a subtle face/profile motif. Avoid generic AI brain icons, glowing robots, or excessive gradients.
+
+---
+
+# 2. VISUAL DESIGN DIRECTION
+
+## Overall aesthetic
+
+Use a combination of:
+
+- Editorial minimalism.
+- Premium SaaS design.
+- Modern Swiss-inspired layouts.
+- Subtle photography-inspired visual elements.
+- Clean enterprise productivity interfaces.
+
+Take inspiration from the design quality of Linear, Raycast, Notion, Arc Browser, and Apple applications.
+
+Do not copy their interfaces. Create an original design language.
+
+## Colour palette
+
+Use this carefully curated palette throughout the application.
+
+Primary background:
+- Warm Ivory: #F8F8F4
+- Pure White: #FFFFFF
+
+Primary brand:
+- Deep Forest Green: #173F35
+- Darker Forest: #102F28
+
+Secondary:
+- Muted Sage: #A8BBAA
+- Soft Sage Background: #EAF0E9
+
+Accent:
+- Warm Amber: #D69B52
+- Pale Sand: #F2EBDD
+
+Typography:
+- Primary text: #202923
+- Secondary text: #737C74
+- Muted text: #A0A79F
+
+Borders:
+- Soft Border: #E8EAE4
+
+Status colours:
+- Identified: #397A5B
+- Unknown: #C77B48
+- Processing: #A68B48
+- Error: #C45D5D
+
+Use the forest green for primary actions and important navigation elements.
+
+Use amber sparingly for highlights and important notifications.
+
+Unknown identities should have a subtle warm terracotta treatment, not alarming red.
+
+Avoid:
+- Excessive gradients.
+- Neon colours.
+- Purple AI-themed gradients.
+- Overly saturated backgrounds.
+- Too many accent colours.
+- Heavy shadows.
+- Excessive glassmorphism.
+
+The interface should look beautiful even without animations.
+
+---
+
+# 3. TYPOGRAPHY
+
+Typography is extremely important.
+
+Use Google Fonts:
+
+**Primary font: Manrope**
+For headings, navigation, buttons, and interface elements.
+
+**Secondary font: DM Sans**
+For body text, descriptions, labels, and supporting information.
+
+Use:
+- Large editorial-style page headings.
+- Medium font weights.
+- Comfortable line heights.
+- Clear hierarchy between headings and supporting text.
+- Slightly tighter letter spacing for prominent headings.
+
+Avoid oversized typography everywhere.
+
+Use consistent font weights and sizes.
+
+---
+
+# 4. APPLICATION LAYOUT
+
+Design a desktop-first application with a persistent left sidebar and a spacious main workspace.
+
+## Sidebar
+
+Width: approximately 245px.
+
+Background: #FFFFFF.
+
+Include:
+
+**Top branding section**
+- Custom Who's In? logo.
+- Small descriptor: Private Photo Workspace.
+
+**Navigation**
+
+1. Overview
+2. Identify People
+3. People Library
+4. Recent Sessions
+
+Use elegant Lucide icons.
+
+The active navigation item should have:
+- Soft sage background.
+- Forest green icon.
+- Dark green text.
+- Rounded corners.
+
+At the bottom:
+- Privacy indicator: "All processing happens locally".
+- Small green status indicator.
+- Version number.
+
+Do not overcrowd the sidebar.
+
+---
+
+# 5. SCREEN 1: OVERVIEW DASHBOARD
+
+This is the first screen users should see.
+
+Create a beautifully balanced dashboard with the following sections.
+
+### Welcome section
+
+Heading:
+
+"Good afternoon."
+
+Subheading:
+
+"Your private photo identification workspace is ready."
+
+Include a small date indicator and a tasteful decorative visual.
+
+### Primary action card
+
+Create a prominent but elegant card titled:
+
+**Identify people in a photo**
+
+Description:
+
+"Upload a group photograph and instantly match familiar faces from your people library."
+
+Include:
+- A beautiful photograph preview or subtle photographic composition.
+- Primary button: "Start identification".
+- Secondary text: "Works completely offline".
+
+This should be the strongest visual element on the page.
+
+### Statistics section
+
+Create four compact metric cards:
+
+1. People in Library
+2. Photos Analysed
+3. People Identified
+4. Unknown Faces
+
+Use realistic demo values only for preview purposes, and ensure the actual application uses real backend data.
+
+Use small icons, subtle backgrounds, and restrained typography.
+
+### Recent activity
+
+Create a refined table or card-based activity section showing:
+- Session name.
+- Date and time.
+- Number of people detected.
+- Identified count.
+- Unknown count.
+- Session status.
+
+Include tasteful empty states when no activity exists.
+
+### Privacy banner
+
+A slim, understated information card:
+
+"Your photos stay yours."
+
+"Every image is processed locally on your device. No cloud uploads. No external AI APIs."
+
+---
+
+# 6. SCREEN 2: IDENTIFY PEOPLE — THE MOST IMPORTANT SCREEN
+
+This is the core functionality and deserves the most design attention.
+
+Design this as a beautiful, guided workflow.
+
+Use a clear three-step progress indicator:
+
+01 — People Library
+02 — Group Photograph
+03 — Identification Results
+
+Show the current step clearly.
+
+## STEP 01: SELECT PEOPLE LIBRARY
+
+Heading:
+
+"Start with your people."
+
+Description:
+
+"Choose the folder containing individual reference photographs."
+
+Create a premium folder-selection component.
+
+The component should include:
+- Custom folder icon.
+- Large title: "Choose reference folder".
+- Description: "Select a folder containing photographs of the people you want to recognise."
+- Primary button: "Browse folders".
+- Supported image formats: JPG, JPEG, PNG.
+- Small privacy reassurance.
+
+After selecting a folder, display:
+
+- Folder name.
+- Folder path.
+- Number of images detected.
+- Number of valid reference identities.
+- Preview grid of reference photographs.
+- Image filename as the person's identity.
+- Validation warnings for unreadable or invalid images.
+
+Create an elegant grid of small circular or rounded-square portraits.
+
+Do not show a fake success state. Reflect actual backend responses.
+
+If the folder is invalid or empty, provide a useful error state.
+
+## STEP 02: UPLOAD GROUP PHOTOGRAPH
+
+Heading:
+
+"Who's in the picture?"
+
+Description:
+
+"Upload a group photograph and let the application identify familiar faces."
+
+Create a large drag-and-drop upload zone.
+
+Visual treatment:
+- Soft sage background.
+- Dashed subtle border.
+- Elegant upload icon.
+- Text: "Drop your group photo here".
+- Supporting text: "or browse files from your computer".
+- Button: "Choose photograph".
+
+Supported formats:
+JPG, JPEG, PNG.
+
+After upload:
+- Display a large image preview.
+- Show the filename.
+- Show image dimensions.
+- Show file size.
+- Provide a replace-image action.
+- Provide a remove-image action.
+
+Include a prominent primary CTA:
+
+"Identify faces"
+
+Disable the button until all required inputs are valid.
+
+## STEP 03: PROCESSING EXPERIENCE
+
+Do not simply display a generic loading spinner.
+
+Create an elegant processing experience with a large image preview and meaningful progress indicators.
+
+Display stages such as:
+
+- Loading reference library.
+- Detecting faces in photograph.
+- Generating face embeddings.
+- Matching identities.
+- Preparing identification results.
+
+Use animated progress indicators and subtle transitions.
+
+Only display actual processing stages and progress when the backend exposes them. Otherwise, show a truthful indeterminate processing state.
+
+Include a small note:
+
+"Your images are being processed locally."
+
+---
+
+# 7. SCREEN 3: IDENTIFICATION RESULTS
+
+This is the most visually important output screen.
+
+It should feel like a premium photo intelligence application.
+
+Heading:
+
+"Here's who's in the picture."
+
+Supporting text:
+
+"We found and analysed the faces in your photograph."
+
+## Main photograph viewer
+
+Display the uploaded group photograph in a large, prominent viewing area.
+
+Draw bounding boxes around detected faces using the actual coordinates returned by the backend.
+
+Use:
+- Forest green outlines for identified people.
+- Muted terracotta outlines for unknown people.
+- Small identity labels.
+- Subtle rounded corners.
+- Clean and legible label positioning.
+
+Example labels:
+
+Priya Sharma
+Rahul Verma
+Ananya Singh
+Unknown
+
+Labels must not overlap unnecessarily.
+
+Make bounding boxes responsive to image scaling.
+
+Allow users to toggle:
+- Show all face labels.
+- Show identified people.
+- Show unknown people.
+- Hide bounding boxes.
+
+Allow clicking a face bounding box to highlight its corresponding result in the list.
+
+## Identification summary
+
+Above or beside the photograph, create three compact statistics:
+
+- 10 Faces Detected
+- 7 Identified
+- 3 Unknown
+
+These must be dynamically populated from actual backend results.
+
+## Results panel
+
+Place a refined results panel beside or below the photograph.
+
+Heading:
+
+"People detected"
+
+Display a list of individual face results.
+
+Each result should include:
+
+- Cropped face thumbnail.
+- Person's name or "Unknown".
+- Identification status.
+- Match confidence, if the backend actually provides a meaningful score.
+- Face number.
+
+Example:
+
+01 | Priya Sharma | Identified
+02 | Rahul Verma | Identified
+03 | Unknown | Not in library
+
+Use:
+- Green status indicator for identified faces.
+- Warm terracotta status indicator for unknown faces.
+- Small confidence indicator where supported.
+
+Do not fabricate confidence percentages.
+
+Clicking a result should highlight its bounding box on the photograph.
+
+## Unknown people section
+
+Make unknown identities particularly clear.
+
+Use a subtle warm sand-coloured card.
+
+Heading:
+
+"Unrecognised faces"
+
+Description:
+
+"These people were detected but could not be matched with your reference library."
+
+Show the unknown face crops separately.
+
+Do not automatically assign names to unknown individuals.
+
+## Export and actions
+
+Include:
+- Download annotated photograph.
+- Export identification report as CSV.
+- Run another identification.
+- Return to overview.
+
+All actions must be functional, not decorative.
+
+---
+
+# 8. SCREEN 4: PEOPLE LIBRARY
+
+Create a dedicated people-management page.
+
+Heading:
+
+"Your people library"
+
+Description:
+
+"Manage the reference photographs used for identification."
+
+Display:
+- Total people count.
+- Search bar.
+- Grid/list toggle.
+- Refresh library button.
+- Folder information.
+
+Create a beautiful responsive portrait grid.
+
+Each person card should have:
+- Portrait.
+- Person's name extracted from filename.
+- Image filename.
+- Small status indicator.
+
+Add a search feature that filters people by name.
+
+Include:
+- Empty state.
+- Loading state.
+- Invalid image state.
+- Folder not selected state.
+
+The folder should remain the source of truth. Do not imply that users can edit identity names independently if the backend does not support it.
+
+---
+
+# 9. SCREEN 5: RECENT SESSIONS
+
+Create a history page for previously analysed group photographs.
+
+Each session card should show:
+- Group photograph thumbnail.
+- Session date.
+- Total faces.
+- Identified people.
+- Unknown people.
+- View results action.
+
+Use an elegant timeline or grid.
+
+Provide a polished empty state for first-time users.
+
+---
+
+# 10. MICRO-INTERACTIONS & ANIMATIONS
+
+The application should feel alive without being distracting.
+
+Implement:
+
+1. Smooth sidebar navigation transitions.
+2. Subtle hover states on cards.
+3. Button hover and pressed states.
+4. Animated progress indicators.
+5. Smooth page transitions.
+6. Gentle fade-in for uploaded images.
+7. Bounding box highlight animation.
+8. Smooth expansion of result details.
+9. Toast notifications for successful actions and errors.
+10. Skeleton loading states.
+
+Use Framer Motion if already available in the project. Otherwise, use lightweight CSS animations.
+
+Keep animation durations approximately 150–300ms for ordinary UI interactions.
+
+Avoid excessive bouncing, spinning, or distracting animations.
+
+---
+
+# 11. RESPONSIVE DESIGN
+
+Although this is primarily a desktop application, make it responsive.
+
+Desktop:
+- Persistent sidebar.
+- Spacious two-column result layout.
+- Large photograph viewer.
+
+Tablet:
+- Collapsible sidebar.
+- Adaptive grid.
+- Stacked result panels where needed.
+
+Mobile:
+- Compact navigation.
+- Single-column layout.
+- Touch-friendly controls.
+- Scrollable image results.
+
+Maintain visual consistency across breakpoints.
+
+---
+
+# 12. TECHNICAL IMPLEMENTATION EXPECTATIONS
+
+First inspect the existing project structure and identify the current frontend framework, existing components, backend APIs, and integration points.
+
+Do not unnecessarily replace the existing architecture.
+
+Build the frontend using the existing stack.
+
+If the frontend is not yet implemented, prefer:
+- React.
+- Vite.
+- TypeScript.
+- Tailwind CSS.
+- Lucide React.
+- Framer Motion.
+
+Use reusable components and a clean component structure.
+
+Suggested components:
+
+- AppLayout
+- Sidebar
+- OverviewDashboard
+- IdentificationWizard
+- FolderSelector
+- ReferenceImageGrid
+- GroupPhotoUploader
+- ProcessingView
+- PhotoViewer
+- FaceBoundingBox
+- IdentificationResults
+- PersonResultCard
+- PeopleLibrary
+- SessionHistory
+- ToastNotification
+- EmptyState
+
+Keep UI logic separate from backend and computer-vision logic.
+
+IMPORTANT:
+- Do not rewrite the face recognition algorithm to make the frontend work.
+- Do not change backend contracts without understanding them.
+- Connect all components to the existing backend through clean API/service abstractions.
+- Preserve the offline-first requirement.
+- Never use external APIs or hosted AI services at runtime.
+- Never upload photographs to a cloud service.
+- Avoid external dependencies that require network access during runtime.
+- Ensure the interface can run locally without an internet connection.
+
+Use realistic mock data only when developing isolated UI previews. Clearly separate mock data from production data.
+
+All final screens must use actual application state.
+
+---
+
+# 13. IMPORTANT DESIGN QUALITY RULES
+
+These rules are non-negotiable.
+
+1. No generic AI dashboard templates.
+2. No excessive rounded cards everywhere.
+3. No giant gradients.
+4. No unnecessary decorative illustrations.
+5. No random icon combinations.
+6. No inconsistent spacing.
+7. No tiny unreadable text.
+8. No overcrowded screens.
+9. No fake statistics or fabricated processing results in production.
+10. No decorative buttons that do nothing.
+11. No browser alert() or confirm() for polished interactions.
+12. No unnecessary modals when inline interaction is better.
+
+Use a consistent spacing system based on 4px/8px increments.
+
+Use restrained border radii:
+- Buttons: 10–12px.
+- Cards: 14–18px.
+- Large image containers: 16–20px.
+
+Use subtle shadows only when they improve visual hierarchy.
+
+Prioritise beautiful empty states and error states as much as successful states.
+
+---
+
+# 14. FINAL DESIGN EXPECTATION
+
+I want the final product to look like a polished, production-ready desktop SaaS application.
+
+The most important experience is:
+
+1. A user opens the application.
+2. Selects a folder containing 50 individual reference photographs.
+3. Uploads one group photograph containing approximately 10 people.
+4. Clicks Identify Faces.
+5. Sees the original photograph with accurately positioned bounding boxes and names.
+6. Sees an organised list of identified and unknown people.
+7. Can export the annotated image and results.
+
+The complete workflow must be intuitive enough for a non-technical office employee.
+
+The UI should make the user immediately understand what to do without reading documentation.
+
+**Design philosophy: Quiet confidence. Beautiful simplicity. Intelligent functionality.**
+
+Do not stop after creating the dashboard. Implement every screen and every interaction described above.
+
+First inspect the existing codebase, then create a short implementation plan, and finally implement the complete frontend.
+
+Before finishing:
+- Run the application.
+- Check every page.
+- Test all interactive states.
+- Verify image previews and responsive layouts.
+- Fix visual inconsistencies.
+- Ensure the frontend is connected to the actual backend.
+- Ensure no production functionality depends on internet access.
+
+Deliver a cohesive, elegant, fully functional experience — not just a pretty prototype.
+</pasted_content id="3361">
+
+### 🧑 Me
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+
+Summary:
+1. **Primary request and intent**
+
+   The user is doing Take-home **Task A: "Who Is in the Photo?"**. The requirements:
+   - an offline face recognition platform;
+   - the user opens one folder of 50 people (file name = person's name, e.g. `Priya Sharma.jpg`);
+   - the user uploads one group photo of about 10 people;
+   - the app shows who each person is on the photo, marks people not in the folder "unknown", and shows a results list;
+   - a good-looking, easy UI;
+   - fully offline, with no online APIs or AI services inside the solution.
+
+   Required repo docs:
+   - **README.md**
+   - **AI_COLLAB.md**: 5–10 decisions (AI suggested / I decided / why / evidence), 2–3 chat excerpts, and the full chat history from the first prompt.
+   - **RESEARCH.md**: with links.
+   - **ARCHITECTURE.md**: an Archify diagram (install via https://raw.githubusercontent.com/tt-a1i/archify/main/llms.txt) plus trade-offs.
+
+   The deadline was Tue 24 Nov 2026, 11:59 PM IST. It has **passed**; today is 2026-11-25. The repo is https://github.com/m1ss-chief/face-recognition-app, cloned at `d:\Study\Task A\face-recognition-app`.
+
+   Most recent request: the user asked "see if all asked in the assignment is completed or not?". I found the docs missing; the user replied "yes" to me writing all the docs (README, AI_COLLAB, RESEARCH, ARCHITECTURE with Archify) and exporting the chat history.
+
+2. **Key technical concepts**
+   - **Face models:** InsightFace buffalo_l: SCRFD-10GF detector (`det_10g.onnx`; 3 strides 8/16/32, 2 anchors; outputs are scores×3, bboxes×3, kps×3) and ArcFace R50 (`w600k_r50.onnx`, 112×112, 512-d).
+   - **Runtime:** run directly via onnxruntime on CPU; no insightface package.
+   - **Preprocessing:**
+     - detector: (x−127.5)/128 with swapRB;
+     - recogniser: (x−127.5)/127.5;
+     - Umeyama 5-point similarity alignment to the ArcFace template;
+     - flip-averaged, L2-normalised embeddings;
+     - EXIF transpose via Pillow.
+   - **Detector resolution** adapts to photo size: 640, 960 or 1280.
+   - **Folder photos:** pick the largest face; retry with padding if no face is found.
+   - **Matching:**
+     - cosine similarity;
+     - greedy one-to-one assignment;
+     - default threshold 0.35, adjustable with a slider;
+     - `best_guess` kept for the "Might be X?" hint.
+   - **Reading order:** row clustering (0.6 × face height), then left to right.
+   - **Server:** Starlette (FastAPI was rejected because Smart App Control blocked `pydantic_core`) with uvicorn, bound to 127.0.0.1. In-memory state; SHA-1 embedding cache; result storage for rematch; `gallery_version`.
+   - **Front-end:** plain HTML/CSS/JS, bundled Inter font (OFL), `webkitdirectory` folder input, drag and drop with the entries API, paste, XHR upload progress, tag collision layout, spotlight hover, canvas download with a legend, light and dark themes, responsive layout.
+   - **Test data:** LFW from the figshare mirror (https://ndownloader.figshare.com/files/5976018) as collages with ground-truth JSON.
+   - **UI testing:** Playwright with Edge (`channel="msedge"`) in a scratchpad venv.
+   - **Git:** commits end with "Co-Authored-By: Claude Opus 5.5 <[email removed]>". `.gitattributes`: CRLF for .bat, LF for source.
+
+3. **Files and code sections** (all in `d:\Study\Task A\face-recognition-app`)
+
+   - **`requirements.txt`:** starlette==1.10.0, uvicorn==0.54.0, python-multipart==0.0.34, onnxruntime==1.32.0, opencv-python-headless==5.1.0.95, numpy==2.4.6, pillow==13.0.0.
+   - **`.gitignore`:** `.venv/`, `__pycache__/`, `*.pyc`, `models/*.onnx`, `models/*.zip`, `data/`, `.cache/`.
+   - **`.gitattributes`:** `*.bat text eol=crlf`, `*.py/js/css/html/md eol=lf`, `woff2`/`onnx` binary.
+   - **`app/face_engine.py`:**
+     - `load_image(bytes)` → BGR, with EXIF transpose
+     - `_umeyama`, `align_face`, `_nms`, `_session`
+     - `class SCRFD` with `.detect(img, input_size=640, score_thresh=0.5, nms_thresh=0.4)`
+     - `class ArcFace` with `.embed(list)`, flip-averaged
+     - `reading_order(faces)`
+     - `class FaceEngine`, with:
+       - `detect_group(img, min_face=16)`: size 640/960/1280, then `reading_order`
+       - `detect_reference(img)` → `(face, n_faces)`: picks the largest face (area × score); pads by max(h,w)//2 and retries with score_thresh=0.4 if no face is found, then subtracts the padding from the coordinates
+   - **`app/matcher.py`:**
+     - `DEFAULT_THRESHOLD = 0.35`
+     - `@dataclass Match(face_index, name, score, best_guess)`
+     - `match_faces(probe, gallery, names, threshold)`: greedy one-to-one over `argsort(-sims)`
+   - **`app/main.py`:**
+     - Starlette app; routes `/`, `/api/status`, `POST /api/gallery`, `POST /api/identify`, `POST /api/rematch`; `/static` mount
+     - `ApiError` exception handler
+     - helper functions: `name_from_filename` (underscores/dots → spaces, title-case if all lower or all upper), `face_thumb`, `image_data_url`, `parse_threshold`, `build_matches`
+     - `do_load_gallery`:
+       - warns on no face, multiple faces, and duplicate names;
+       - merges same-name entries by averaging their embeddings.
+     - `do_identify`:
+       - returns `result_id`, `image` (max 2000 px), `width`, `height`;
+       - and `faces` with box, thumb, `low_quality` (<40 px), name, score, best_guess.
+     - `rematch`: checks `gallery_version`
+     - gallery form parsed with `request.form(max_files=5000, max_fields=5000)`
+     - `main()`: argparse `--port 8000`, `--no-browser`; opens the browser
+   - **`static/index.html`, `static/app.css`, `static/app.js`:**
+     - layout C: guided start (step1/step2 cards), dark stage, `#overlay` with `.fbox` tags, results toolbar (summary pills, strictness slider 0.2–0.6, New photo, Download), `.cards`, people drawer with search and issues, toasts at bottom-right
+     - `app.js` functions: `loadFolder`, `identify`, `renderResults`, `layoutTags` (below → above → mini; `measuring` and `settled` classes), `highlight`/`bindLinking`, `onThreshold` (debounced rematch), `download` (two-pass label placement plus legend), `renderPeople`/`openDrawer`/`closeDrawer`, `bindDrop` (entries API, paste)
+     - only toasts when photos are skipped
+   - **`static/fonts/inter-latin-wght-normal.woff2`** and **`LICENSE-Inter.txt`**
+   - **`scripts/download_models.py`, `make_test_data.py`, `evaluate.py`, `export_chat.py`.** `export_chat.py` converts the transcript `.jsonl` to Markdown:
+     - keeps user text, documents, AskUserQuestion answers, and human `queued_command` attachments;
+     - keeps assistant text and one-line tool summaries;
+     - strips system reminders, `ide_` tags and emails.
+   - **`setup.bat`, `run.bat`:** CRLF line endings. `setup.bat` creates the venv, installs the requirements and downloads the models; `run.bat` runs `.venv\Scripts\python -m app.main %*`.
+   - **`README.md`:** install, run, usage, testing, troubleshooting (Smart App Control, port, etc.), layout, licences.
+   - **`RESEARCH.md`:** problem analysis, engine comparison with links, matching design, data sources, threshold sweep table, platform choice, references.
+   - **`ARCHITECTURE.md`:** contains `<!-- ARCHIFY: replace this block with the Archify export once generated: ![Architecture](docs/architecture.png) -->`, a note, a Mermaid flowchart, request flow, trade-offs table and known limitations.
+   - **`AI_COLLAB.md`:** 9 decisions:
+     1. plan first;
+     2. engine;
+     3. web app;
+     4. LFW data;
+     5. FastAPI → Starlette;
+     6. layout C overriding the AI's recommendation;
+     7. beautiful-UI push;
+     8. numbering and one name per person;
+     9. audit against the brief.
+
+     It also has 3 chat excerpts and a link to `chat-history/`.
+   - **`chat-history/README.md`** and **`chat-history/claude-code-session.md`:** generated from `C:\Users\m1ssc\.claude\projects\d--Study-Task-A\029efe37-d586-46ed-9a81-29407a5b5829.jsonl`.
+   - **`data/` (gitignored):** `known/` (50 people), `groups/group_00..19.jpg` plus `.json`, and `groups/ANSWERS.txt`.
+
+   **Commits** (all pushed): a6e73b0 initial, d027451 pipeline, 48f9ec1 API, 00e85b8 UI, d20d91d line endings, 21e1d92 docs.
+
+4. **Errors and fixes**
+   - **git/python/node missing:** git and Python installed via winget with user approval. The PATH was refreshed manually in PowerShell.
+   - **pydantic_core DLL blocked by Smart App Control:** switched from FastAPI to Starlette and removed `uvicorn[standard]`.
+   - **Bash heredoc quoting failure:** wrote the replacement code with the Write tool and spliced it in with a Python script.
+   - **Playwright `set_input_files` on a webkitdirectory input:** it needs a directory path, not a file list.
+   - **UI issues found in screenshots:**
+     - tag overlap → `layoutTags`;
+     - numbering → `reading_order`;
+     - toast overlapping content → moved to bottom-right, success toast removed;
+     - entry animations replaying on resize → `settled` class;
+     - measuring during animation → `measuring` class;
+     - overlapping labels in the download → rewrote `download()`;
+     - mobile header wrapping.
+   - **Line endings:** .bat files had LF endings; converted to CRLF and added `.gitattributes`.
+   - **run.bat "not recognized" via relative cmd invocation in the harness:** works by full path; the server came up.
+   - **Chat export:**
+     - mid-turn user messages were in `attachment` entries of type `queued_command` (`origin.kind == "human"`), not in `queue-operation` entries;
+     - the export wrongly included task notifications and agent messages; fixed.
+   - **winget install of Node.js LTS:** DENIED by the auto-mode permission classifier. Not retried.
+
+5. **Problem solving**
+   - Accuracy is validated on the LFW collages.
+   - The UI was validated in light and dark modes, on desktop and mobile, and functionally (slider, download, search, bad file); no page errors.
+   - Remaining:
+     - the Archify diagram, which is blocked on Node.js;
+     - no testing on real group photos yet;
+     - `Priya Sharma (2).jpg`-style names are not normalised (offered; no response);
+     - the deadline has passed (advised the user to contact the placement team).
+
+6. **All user messages**
+   - (with the PDF) "this is the task that I need to do and https://github.com/m1ss-chief/face-recognition-app this is the github repository that I need towork on"
+   - AskUserQuestion answers: "Yes, install both (Recommended)", "SCRFD + ArcFace via ONNX (Recommended)", "Local web app (Recommended)"
+   - (mid-turn) "first tell me how are we planning to do this task."
+   - "where can we get the test data?and go with step 1"
+   - "git identity is set"
+   - "yes push it and go with step 3"
+   - "what different options do you have?"
+   - AskUserQuestion answer: "C. Photo-first, results below"
+   - (mid-turn) "i want a very beautiful UI that actually feels attractive UI and UX both should be very nicely working and aesthetic"
+   - "how do icheck ifits working properly. i dont have any photos ready with me to test"
+   - "what if I want to match multiple people in a single photo then?"
+   - (with the PDF again) "see if all asked in the assignment is completed or not?"
+   - "yes" (to writing the docs)
+
+   Privacy constraint: keep the user's email private; never include it in external requests or the repo (it was removed from the chat export).
+
+7. **Pending tasks**
+   - **Archify diagram for ARCHITECTURE.md.** Needs Node.js, and the Node install was denied, so the user must install Node LTS (`winget install OpenJS.NodeJS.LTS`) or allow it. Then:
+     - `npx -y skills@latest add https://archify.si --list --full-depth` (confirm a single `archify` skill is listed);
+     - `npx -y skills@latest add https://archify.si --skill archify --agent claude-code [--global] --copy --yes` (confirm the scope);
+     - `node <installed-path>/bin/archify.mjs doctor`;
+     - write `candidate.json` (architecture type; schemas in `schemas/`, examples in `examples/web-app.architecture.json`);
+     - `node bin/archify.mjs finalize architecture <candidate.json> <output.html> --quality showcase --json --repo-root <repo>`;
+     - export SVG with `node <skill-dir>/bin/export-svg.mjs <diagram.html> <image.svg>` or PNG from the viewer;
+     - save to `docs/architecture.png` / `.html` and replace the ARCHIFY placeholder in ARCHITECTURE.md.
+   - Regenerate `chat-history/claude-code-session.md` at the end with `scripts/export_chat.py` so it includes the latest turns.
+   - Report the completion status to the user. Remind them:
+     - to ask the placement team about the late submission;
+     - to review AI_COLLAB.md (written in the first person for them);
+     - about real-photo testing;
+     - about the optional "(2)" suffix fix.
+
+8. **Current work**
+
+   I had just finished writing and pushing all the required docs (commit 21e1d92, "Add required docs: README, RESEARCH, ARCHITECTURE, AI_COLLAB + chat history"). The only remaining doc item is the Archify diagram; ARCHITECTURE.md currently uses a Mermaid diagram plus a placeholder comment because the winget install of Node.js was denied by the permission classifier. I had not yet sent the user a final message explaining what was done and that Node.js permission or installation is needed.
+
+9. **Optional next step**
+
+   Send the user a status message. Content:
+   - all four docs and the chat history are written and pushed;
+   - the Archify diagram is blocked because installing Node.js was denied, so ask them to install Node LTS themselves or allow the install, after which I'll install Archify, generate the diagram, update ARCHITECTURE.md, re-export the chat history and push;
+   - remind them to review AI_COLLAB.md and to contact the placement team about the deadline.
+
+   This follows the user's "yes" to my offer: "Write the four docs anyway … ARCHITECTURE: install Archify, draw the diagram, and write the trade-offs."
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: C:\Users\m1ssc\.claude\projects\d--Study-Task-A\029efe37-d586-46ed-9a81-29407a5b5829.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+
+The messages after this summary are the most recent messages from before compaction, kept verbatim. The summary was written without seeing them, so something it says has not happened yet may already have happened in them.
+
+### 🤖 AI
+
+I'll start by reading the current front-end and the API it talks to, so the redesign stays wired to the real backend.
+
+> 🔧 `Read`: d:\Study\Task A\face-recognition-app\app\main.py
+
+> 🔧 `Read`: d:\Study\Task A\face-recognition-app\static\index.html
+
+> 🔧 `Read`: d:\Study\Task A\face-recognition-app\static\app.js
+
+> 🔧 `Bash`: Download Manrope and DM Sans font files
+
+> 🔧 `Bash`: Download Lucide icon SVGs and licence
+
+### 🤖 AI
+
+All 33 icons downloaded. Next, I'll bundle them into a small JS module and put the fonts in place:
+
+> 🔧 `Bash`: Bundle icons, install fonts, remove Inter
+
+### 🤖 AI
+
+Now the backend additions: session history, real stats, and a readable gallery. The recognition code is unchanged.
+
+> 🔧 `Bash`: Add sessions, stats and gallery endpoints
+
+### 🤖 AI
+
+Bash heredocs break here again, so I'll write the patch script to a file and run that instead.
+
+> 🔧 `Write`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\patch_main.py
+
+> 🔧 `Bash`: Apply backend patch and check routes load
+
+### 🤖 AI
+
+The backend routes load. Now the front-end itself: first the HTML shell.
+
+> 🔧 `Write`: d:\Study\Task A\face-recognition-app\static\index.html
+
+> 🔧 `Read`: d:\Study\Task A\face-recognition-app\static\app.css
+
+### 🤖 AI
+
+Next, the stylesheet: the design tokens from your palette, the two typefaces, and every component.
+
+> 🔧 `Write`: d:\Study\Task A\face-recognition-app\static\app.css
+
+### 🤖 AI
+
+The stylesheet is in. Now the application logic, wired to the real endpoints:
+
+> 🔧 `Write`: d:\Study\Task A\face-recognition-app\static\app.js
+
+### 🤖 AI
+
+The front-end is written. Next: the `marks` field that the overview's print preview needs, plus a few missing CSS rules:
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\app\main.py
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\static\app.css
+
+### 🤖 AI
+
+Now I'll test the real app: start the server, then drive it in Edge with Playwright.
+
+> 🔧 `Bash`: Start app server and check new endpoints
+
+> 🔧 `Bash`: Inspect earlier Playwright test setup
+
+### 🤖 AI
+
+I'll write a new end-to-end script that walks every screen and state and captures screenshots:
+
+> 🔧 `Write`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2.py
+
+> 🔧 `Bash`: Run end-to-end UI test with screenshots
+
+### 🤖 AI
+
+Every step ran end to end, and the CSV and annotated photo both downloaded. The one console error is the 404 that the missing-session test triggers on purpose. Now the screenshots:
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-01-overview-empty.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-04-step1.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-06-step1-done.png
+
+### 🤖 AI
+
+The overview and step 1 look clean. Two fixes: the warnings list takes too much room (it will become a collapsible), and the print in the hero is cropped at the bottom. Checking the next screens:
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-08-step2-ready.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-09-processing.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-10-results.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-11-results-full.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-12-selected.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-16-strict.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-17-overview-data.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-18-library.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-22-sessions.png
+
+> 🔧 `Bash`: Remove lazy loading from inline thumbnails
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\static\app.js
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\static\app.js
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\static\app.js
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\static\app.js
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\static\app.js
+
+> 🔧 `Edit`: d:\Study\Task A\face-recognition-app\static\app.css
+
+> 🔧 `Bash`: Soften spotlight, resize hero print
+
+### 🤖 AI
+
+Next, a run at tablet width (900 px) and phone width (390 px), plus a desktop re-check:
+
+> 🔧 `Bash`: Re-run UI test at desktop, tablet, phone widths
+
+> 🔧 `Bash`: Re-run desktop test to see failure
+
+> 🔧 `Bash`: Show which click timed out
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-10-results.png
+
+### 🤖 AI
+
+The panel collapsed to zero height. My new rules sit earlier in the stylesheet than the base rules, so the base rules override them. I'll make the new rules more specific:
+
+> 🔧 `Bash`: Fix specificity and rerun all three widths
+
+### 🤖 AI
+
+All three widths now pass. The only console error is the intentional 404. Checking the key screenshots:
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\1440-13-unknown-selected.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\390-10-results.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\390-17-overview-data.png
+
+### 🤖 AI
+
+Desktop looks right now. On mobile, the overview table is a little too wide (it causes sideways scrolling), and the result stats and buttons wrap awkwardly. Fixing:
+
+> 🔧 `Bash`: Mobile fixes for table and results header
+
+> 🔧 `Bash`: Rerun phone test and check horizontal overflow
+
+### 🤖 AI
+
+No page scrolls sideways at 390 px now. A last look at phone results, tablet step 1, and the downloaded annotated photo:
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\390-11-results-full.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\900-06-step1-done.png
+
+> 🔧 `Read`: C:\Users\m1ssc\AppData\Local\Temp\claude\832050560d323575\029efe37-d586-46ed-9a81-29407a5b5829\scratchpad\shots2\annotated.jpg
+
+> 🔧 `Bash`: Update README, ARCHITECTURE, AI_COLLAB for redesign
+
+### 🤖 AI
+
+The docs are updated. Next, I'll regenerate the chat-history export so it includes this redesign, then commit and push:
+
+> 🔧 `Bash`: Re-export chat, commit and push redesign

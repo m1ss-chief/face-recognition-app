@@ -45,19 +45,22 @@ Terminal alternative: `.venv\Scripts\python -m app.main` (options: `--port 8001`
 
 ## Use it
 
-1. **Open folder.** Choose the folder of known people: one photo per person, with the file named after them, e.g. `Priya Sharma.jpg`.
+The app has four pages in the left sidebar: **Overview**, **Identify People**, **People Library** and **Recent Sessions**. Click **Start identification**, then:
+
+1. **People Library: Browse folders.** Choose the folder of known people: one photo per person, with the file named after them, e.g. `Priya Sharma.jpg`.
    - JPG, PNG, WEBP and BMP are accepted. Other files are ignored.
    - Your browser asks "Upload N files to this site?". Click **Upload**. The "site" is your own computer; nothing leaves it.
-   - Problem photos (no face, several faces) are listed under the **!** next to the people counter.
-2. **Choose photo.** Pick the group photo, drop it anywhere on the window, or paste it with **Ctrl+V**.
-3. **Read the result:**
-   - green numbered tags mark recognised people;
-   - dashed amber tags mark **Unknown** people;
-   - the cards underneath list every face in the same numbered order.
-4. **Explore the result:**
-   - hover over a card to spotlight that face on the photo, and click it to jump there;
-   - move **Matching strictness** to be more relaxed or more strict (the result updates instantly);
-   - **Download** saves a labelled copy of the photo.
+   - You see the people found, and any photos that need attention (no face, several faces).
+2. **Group Photograph: Choose photograph.** Pick the group photo, drop it anywhere on the window, or paste it with **Ctrl+V**. Check the preview, then click **Identify faces**.
+3. **Identification Results:**
+   - green numbered labels mark identified people;
+   - dashed terracotta labels mark **Unknown** people, who are also shown in the *Unrecognised faces* section;
+   - **People detected** lists every face in the same numbered order. Click a face in the list or on the photo to link the two and see the similarity score.
+   - Use the **Labels / Identified / Unknown / Boxes** toggles to change what's drawn on the photo.
+   - Move **Match strictness** to be more relaxed or more strict (the result updates instantly).
+   - **Download annotated photo** saves a labelled JPG. **Export CSV** saves the list as a spreadsheet.
+
+**People Library** shows every reference photo with search and a grid or list view. **Recent Sessions** lets you reopen earlier results; they're kept until the app is closed.
 
 ## Test it without your own photos
 
@@ -97,7 +100,7 @@ app/
   face_engine.py   SCRFD face detection + ArcFace embeddings (onnxruntime, CPU)
   matcher.py       cosine similarity + one-to-one name assignment + "unknown" threshold
   main.py          local Starlette web server: /api/gallery, /api/identify, /api/rematch
-static/            the UI (plain HTML/CSS/JS, no build step, bundled Inter font)
+static/            the UI (plain HTML/CSS/JS, no build step; bundled fonts and icons)
 scripts/
   download_models.py   one-time model download (setup only)
   make_test_data.py    practice data from LFW (development only)
@@ -108,5 +111,6 @@ setup.bat / run.bat    one-click install and start
 ## Licences and credits
 
 - Face models: InsightFace `buffalo_l` (SCRFD-10GF detector, ArcFace R50 recogniser) from [deepinsight/insightface](https://github.com/deepinsight/insightface). The pretrained models are for **non-commercial research use**, which suits this task. A commercial product would need a licence or other models; see RESEARCH.md.
-- Font: [Inter](https://github.com/rsms/inter), SIL Open Font License (`static/fonts/LICENSE-Inter.txt`).
+- Fonts: [Manrope](https://github.com/sharanda/manrope) and [DM Sans](https://github.com/googlefonts/dm-fonts), SIL Open Font License (`static/fonts/LICENSE-*.txt`). Bundled, so no internet is needed.
+- Icons: [Lucide](https://lucide.dev), ISC licence (`static/fonts/LICENSE-Lucide.txt`). Bundled in `static/icons.js`.
 - Practice data: [LFW](https://vis-www.cs.umass.edu/lfw/). It is downloaded by the script and not stored in this repo.

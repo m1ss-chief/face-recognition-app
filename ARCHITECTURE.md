@@ -7,7 +7,7 @@
 
 ```mermaid
 flowchart LR
-  subgraph Browser["Browser (static/index.html, app.js, app.css)"]
+  subgraph Browser["Browser: Overview · Identify wizard · People Library · Recent Sessions"]
     UI1["① Open folder<br/>input webkitdirectory / drag & drop"]
     UI2["② Group photo<br/>file picker / drop / Ctrl+V"]
     VIEW["Photo + numbered tags<br/>Result cards, strictness slider<br/>Download labelled JPG"]
@@ -17,7 +17,8 @@ flowchart LR
     G["POST /api/gallery"]
     I["POST /api/identify"]
     R["POST /api/rematch"]
-    STATE[("In-memory state<br/>people: name → 512-d embedding<br/>embedding cache by file hash<br/>last 20 results")]
+    S["GET /api/status, /api/gallery,<br/>/api/sessions, /api/sessions/{id}"]
+    STATE[("In-memory state<br/>people: name → 512-d embedding<br/>embedding cache by file hash<br/>last 30 sessions")]
   end
 
   subgraph Engine["Face engine (app/face_engine.py, app/matcher.py)"]
@@ -38,6 +39,8 @@ flowchart LR
   EMB --> MATCH
   STATE --> MATCH
   R --> MATCH
+  S --- STATE
+  VIEW -->|stats, library, history| S
   MATCH -->|boxes, names, scores, thumbnails, rotated image| VIEW
   MODELS -.-> DET
   MODELS -.-> EMB
@@ -62,6 +65,7 @@ flowchart LR
    - mark anything below the threshold as **Unknown**, but keep its closest name as a "Might be X?" hint.
 4. **Render.** The server returns the rotated image, the boxes, names, scores and face thumbnails. The browser draws the tags with collision avoidance and the result cards.
 5. **Strictness slider.** `/api/rematch` re-runs only step 3 on the stored embeddings, so the result updates instantly without detecting faces again.
+6. **Sessions and stats.** Each analysed photo is kept in memory as a session (image, faces, embeddings). The Overview counts and Recent Sessions page read these through `/api/status` and `/api/sessions`. Nothing is written to disk, so history is cleared when the app closes.
 
 Nothing leaves `127.0.0.1`. The server binds to localhost only, and the UI loads no external resources (the font is bundled).
 
@@ -73,6 +77,8 @@ Nothing leaves `127.0.0.1`. The server binds to localhost only, and the UI loads
 | **Run the ONNX models directly** with onnxruntime | The `insightface` package's ready-made helpers (I re-implemented SCRFD decoding and alignment, about 150 lines) | The package needs a C++ compiler on Windows; onnxruntime is a plain wheel. |
 | **CPU only** | GPU speed | Works on any laptop with no CUDA setup. About 1–1.5 s per group photo and about 8–10 s for a 50-person folder is fine for this use. |
 | **Local web app** (Starlette + plain HTML/JS) | A native desktop window; a modern front-end framework | No build step, one command, a polished UI, and the browser's built-in folder picker. |
+| **Plain JS sidebar app instead of React/Vite/Tailwind** for the redesign | Component tooling, hot reload | Node.js isn't installed on the demo laptop, and a build step adds risk. Hash routing and small render functions keep it to three files. |
+| **Session history in memory only** | History surviving a restart | Photos of people shouldn't be written to disk by default; privacy over convenience. |
 | **Starlette instead of FastAPI** | FastAPI's automatic validation and docs | Windows Smart App Control blocked FastAPI's compiled `pydantic_core` on the demo laptop. Starlette is pure Python. |
 | **One photo per person** (multiple same-named photos are averaged) | Better accuracy from several photos per person | The brief gives one photo per person. Averaging still helps when more photos exist. |
 | **Fixed default threshold (0.35) plus a live slider** | A fully automatic per-photo threshold | Unseen data varies. A visible, adjustable setting is more honest and fixable live in the demo. |

@@ -14,6 +14,7 @@ import base64
 import hashlib
 import re
 import threading
+import time
 import uuid
 import webbrowser
 from collections import OrderedDict
@@ -53,30 +54,79 @@ def get_engine() -> FaceEngine:
 # --------------------------------------------------------------------------- #
 # In-memory state (single local user, so a module-level store is enough)
 # --------------------------------------------------------------------------- #
+MAX_SESSIONS = 30
+
+
 @dataclass
 class Person:
     name: str
     embedding: np.ndarray
     thumb: str
+    files: list[str]
+
+
+@dataclass
+class Session:
+    """One analysed group photo, kept in memory until the app is closed."""
+    id: str
+    filename: str
+    created: float
+    probes: np.ndarray
+    gallery_version: int
+    threshold: float
+    image: str
+    preview: str
+    width: int
+    height: int
+    faces: list[dict]
+
+    def counts(self) -> dict:
+        known = sum(1 for f in self.faces if f["name"])
+        return {"faces": len(self.faces), "identified": known, "unknown": len(self.faces) - known}
+
+    def summary(self) -> dict:
+        marks = [[round(f["box"][0] / self.width, 4), round(f["box"][1] / self.height, 4),
+                  round(f["box"][2] / self.width, 4), round(f["box"][3] / self.height, 4), bool(f["name"])]
+                 for f in self.faces]
+        return {"id": self.id, "filename": self.filename, "created": self.created,
+                "preview": self.preview, "threshold": self.threshold, "marks": marks, **self.counts()}
+
+    def full(self) -> dict:
+        return {"result_id": self.id, "session_id": self.id, "filename": self.filename,
+                "created": self.created, "threshold": self.threshold, "image": self.image,
+                "width": self.width, "height": self.height, "faces": self.faces,
+                "stale": self.gallery_version != gallery_version}
 
 
 class State:
     def __init__(self) -> None:
         self.people: list[Person] = []
+        self.issues: list[dict] = []
+        self.folder: str = ""
+        self.files_received = 0
         self.embedding_cache: dict[str, tuple[np.ndarray | None, int, str | None]] = {}
-        self.results: OrderedDict[str, tuple[np.ndarray, int]] = OrderedDict()  # result_id -> probes
+        self.sessions: OrderedDict[str, Session] = OrderedDict()
+        self.photos_analysed = 0
 
     def gallery(self) -> tuple[np.ndarray, list[str]]:
         if not self.people:
             return np.zeros((0, 512), dtype=np.float32), []
         return np.stack([p.embedding for p in self.people]), [p.name for p in self.people]
 
-    def remember_result(self, probes: np.ndarray, gallery_version: int) -> str:
-        rid = uuid.uuid4().hex
-        self.results[rid] = (probes, gallery_version)
-        while len(self.results) > 20:
-            self.results.popitem(last=False)
-        return rid
+    def add_session(self, session: Session) -> None:
+        self.sessions[session.id] = session
+        self.photos_analysed += 1
+        while len(self.sessions) > MAX_SESSIONS:
+            self.sessions.popitem(last=False)
+
+    def gallery_info(self) -> dict:
+        return {
+            "count": len(self.people),
+            "folder": self.folder,
+            "files_received": self.files_received,
+            "people": [{"name": p.name, "thumb": p.thumb, "files": p.files} for p in self.people],
+            "issues": self.issues,
+        }
 
 
 state = State()
@@ -119,6 +169,10 @@ def image_data_url(img: np.ndarray, quality: int = 88) -> str:
 class ApiError(Exception):
     def __init__(self, status: int, message: str):
         self.status, self.message = status, message
+
+
+def base_name(path: str) -> str:
+    return path.replace("\\", "/").rsplit("/", 1)[-1]
 
 
 def build_matches(probes: np.ndarray, threshold: float) -> list[dict]:
@@ -174,7 +228,7 @@ def do_load_gallery(files: list[tuple[str, bytes]]) -> dict:
             issues.append({"name": name, "file": filename,
                            "problem": "Same name as another photo, both photos used", "warning": True})
         seen.add(name)
-        people.append(Person(name=name, embedding=emb, thumb=thumb or ""))
+        people.append(Person(name=name, embedding=emb, thumb=thumb or "", files=[base_name(filename)]))
 
     if not people:
         raise ApiError(400, "No usable face photos were found in that folder.")
@@ -186,16 +240,16 @@ def do_load_gallery(files: list[tuple[str, bytes]]) -> dict:
     new_people = []
     for name, ps in merged.items():
         emb = np.mean([p.embedding for p in ps], axis=0)
-        new_people.append(Person(name=name, embedding=emb / np.linalg.norm(emb), thumb=ps[0].thumb))
+        new_people.append(Person(name=name, embedding=emb / np.linalg.norm(emb), thumb=ps[0].thumb,
+                                 files=[f for p in ps for f in p.files]))
     new_people.sort(key=lambda p: p.name.lower())
     state.people = new_people
+    state.issues = issues
+    first = files[0][0].replace("\\", "/")
+    state.folder = first.split("/", 1)[0] if "/" in first else ""
+    state.files_received = len(files)
     gallery_version += 1
-
-    return {
-        "count": len(state.people),
-        "people": [{"name": p.name, "thumb": p.thumb} for p in state.people],
-        "issues": issues,
-    }
+    return state.gallery_info()
 
 
 def do_identify(filename: str, data: bytes, threshold: float) -> dict:
@@ -213,15 +267,24 @@ def do_identify(filename: str, data: bytes, threshold: float) -> dict:
     display = cv2.resize(img, (round(w * scale), round(h * scale)), interpolation=cv2.INTER_AREA) if scale < 1 else img
 
     probes = np.stack([f.embedding for f in faces]) if faces else np.zeros((0, 512), dtype=np.float32)
-    result_id = state.remember_result(probes, gallery_version)
     matches = build_matches(probes, threshold)
 
-    return {
-        "result_id": result_id,
-        "image": image_data_url(display),
-        "width": display.shape[1],
-        "height": display.shape[0],
-        "faces": [
+    ph, pw = display.shape[:2]
+    pscale = min(1.0, 480 / max(ph, pw))
+    preview = cv2.resize(display, (round(pw * pscale), round(ph * pscale)), interpolation=cv2.INTER_AREA)
+
+    session = Session(
+        id=uuid.uuid4().hex,
+        filename=base_name(filename),
+        created=time.time(),
+        probes=probes,
+        gallery_version=gallery_version,
+        threshold=threshold,
+        image=image_data_url(display),
+        preview=image_data_url(preview, 80),
+        width=display.shape[1],
+        height=display.shape[0],
+        faces=[
             {
                 **m,
                 "box": [round(float(v) * scale, 1) for v in f.box],
@@ -230,14 +293,41 @@ def do_identify(filename: str, data: bytes, threshold: float) -> dict:
             }
             for f, m in zip(faces, matches)
         ],
-    }
+    )
+    state.add_session(session)
+    return session.full()
 
 
 # --------------------------------------------------------------------------- #
 # HTTP handlers
 # --------------------------------------------------------------------------- #
 async def status(request: Request) -> JSONResponse:
-    return JSONResponse({"people": len(state.people), "default_threshold": DEFAULT_THRESHOLD})
+    sessions = list(state.sessions.values())
+    return JSONResponse({
+        "people": len(state.people),
+        "default_threshold": DEFAULT_THRESHOLD,
+        "stats": {
+            "photos_analysed": state.photos_analysed,
+            "identified": sum(s.counts()["identified"] for s in sessions),
+            "unknown": sum(s.counts()["unknown"] for s in sessions),
+        },
+    })
+
+
+async def get_gallery(request: Request) -> JSONResponse:
+    return JSONResponse(state.gallery_info())
+
+
+async def list_sessions(request: Request) -> JSONResponse:
+    return JSONResponse({"sessions": [s.summary() for s in reversed(state.sessions.values())]})
+
+
+async def get_session(request: Request) -> JSONResponse:
+    s = state.sessions.get(request.path_params["sid"])
+    if s is None:
+        return JSONResponse({"error": "That session is no longer available. "
+                                      "Sessions are kept only until the app is closed."}, 404)
+    return JSONResponse(s.full())
 
 
 async def load_gallery(request: Request) -> JSONResponse:
@@ -264,13 +354,18 @@ async def identify(request: Request) -> JSONResponse:
 async def rematch(request: Request) -> JSONResponse:
     """Re-run matching at a new threshold without re-detecting faces (slider)."""
     body = await request.json()
-    rid = body.get("result_id")
-    if rid not in state.results:
+    s = state.sessions.get(body.get("result_id"))
+    if s is None:
         return JSONResponse({"error": "Result expired, please upload the photo again."}, 404)
-    probes, version = state.results[rid]
-    if version != gallery_version:
-        return JSONResponse({"error": "The folder changed, please upload the photo again."}, 409)
-    return JSONResponse({"matches": build_matches(probes, parse_threshold(body.get("threshold")))})
+    if s.gallery_version != gallery_version:
+        return JSONResponse({"error": "The people folder changed since this photo was analysed. "
+                                      "Run it again to use the new folder."}, 409)
+    threshold = parse_threshold(body.get("threshold"))
+    matches = build_matches(s.probes, threshold)
+    for m in matches:
+        s.faces[m["index"]].update(m)
+    s.threshold = threshold
+    return JSONResponse({"matches": matches})
 
 
 async def index(request: Request) -> FileResponse:
@@ -286,6 +381,9 @@ app = Starlette(
         Route("/", index),
         Route("/api/status", status),
         Route("/api/gallery", load_gallery, methods=["POST"]),
+        Route("/api/gallery", get_gallery, methods=["GET"]),
+        Route("/api/sessions", list_sessions),
+        Route("/api/sessions/{sid}", get_session),
         Route("/api/identify", identify, methods=["POST"]),
         Route("/api/rematch", rematch, methods=["POST"]),
         Mount("/static", StaticFiles(directory=STATIC_DIR), name="static"),
